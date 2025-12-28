@@ -6,139 +6,56 @@ import DashboardLayout from '@/app/Admin/DashboardLayout';
 
 export default function DetailSekolah({ params }) {
   const router = useRouter();
-  const [school, setSchool] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
 
-  // // Dummy data - seharusnya fetch berdasarkan params.id
-  // const schoolData = {
-  //   1: {
-  //     name: 'SMA Negeri 1 Purwokerto',
-  //     npsn: '1234567',
-  //     jenjang: 'SMA',
-  //     akreditasi: 'A',
-  //     noTelepon: '08978868',
-  //     status: 'Sudah Klaim',
-  //     statusSekolah: 'Negeri',
-  //     website: 'sman1purwokerto.sch.id',
-  //     email: 'sman1pwt@gmail.com',
-  //     alamat: 'Jl. in aja dulu rt 05/01',
-  //     deskripsi: 'Assalamu alaikum, puji tuhan'
-  //   },
-  //   2: {
-  //     name: 'SMA Negeri 2 Jakarta',
-  //     npsn: '7654321',
-  //     jenjang: 'SMA',
-  //     akreditasi: 'A',
-  //     noTelepon: '08123456789',
-  //     status: 'Belum Klaim',
-  //     statusSekolah: 'Negeri',
-  //     website: 'sman2jakarta.sch.id',
-  //     email: 'sman2jkt@gmail.com',
-  //     alamat: 'Jl. Raya Jakarta No. 123',
-  //     deskripsi: 'Sekolah unggulan di Jakarta'
-  //   }
-  // };
-
-  // Fetch data sekolah berdasarkan ID
-  useEffect(() => {
-    const fetchSchoolDetail = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        
-        if (!token) {
-          setError('Token tidak ditemukan. Silakan login kembali.');
-          setIsLoading(false);
-          return;
-        }
-
-        const response = await fetch(`/api/schools/${params.id}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-         const data = await response.json();
-
-         if (!data.success) {
-          setError(data.message || 'Gagal mengambil data sekolah');
-          setIsLoading(false);
-          return;
-        }
-
-        // Set data sekolah dari response
-        setSchool(data.data);
-        setIsLoading(false);
-
-      } catch (err) {
-        console.error('Error:', err);
-        setError('Terjadi kesalahan saat mengambil data');
-        setIsLoading(false);
-      }
-    };
-
-    fetchSchoolDetail();
-  }, [params.id]);
-
-  const handleEdit = () => {
-    router.push(`/Admin/sekolah/edit/${params.id}`);
-  };
-
-  const handleDelete = async () => {
-    const confirmDelete = confirm(`Apakah Anda yakin ingin menghapus data "${school.nama}"?`);
-    
-    if (!confirmDelete) return;
-
-    try {
-      const token = localStorage.getItem('token');
-
-      const response = await fetch(`/api/schools/${params.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
-
-       if (!data.success) {
-        alert(data.message || 'Gagal menghapus data');
-        return;
-      }
-
-      alert(`Data "${school.nama}" berhasil dihapus!`);
-      router.push('/Admin/sekolah');
-
-    } catch (err) {
-      console.error('Error:', err);
-      alert('Terjadi kesalahan saat menghapus data');
+  // Dummy data - seharusnya fetch berdasarkan params.id
+  const schoolData = {
+    1: {
+      name: 'SMA Negeri 1 Purwokerto',
+      npsn: '1234567',
+      jenjang: 'SMA',
+      akreditasi: 'A',
+      noTelepon: '08978868',
+      status: 'Sudah Klaim',
+      statusSekolah: 'Negeri',
+      website: 'sman1purwokerto.sch.id',
+      email: 'sman1pwt@gmail.com',
+      alamat: 'Jl. in aja dulu rt 05/01',
+      deskripsi: 'Assalamu alaikum, puji tuhan'
+    },
+    2: {
+      name: 'SMA Negeri 2 Jakarta',
+      npsn: '7654321',
+      jenjang: 'SMA',
+      akreditasi: 'A',
+      noTelepon: '08123456789',
+      status: 'Belum Klaim',
+      statusSekolah: 'Negeri',
+      website: 'sman2jakarta.sch.id',
+      email: 'sman2jkt@gmail.com',
+      alamat: 'Jl. Raya Jakarta No. 123',
+      deskripsi: 'Sekolah unggulan di Jakarta'
     }
   };
 
-  // Loading state
-  if (isLoading) {
-    return (
-      <DashboardLayout title="Admin / Detail Sekolah">
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-500">Memuat data...</p>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  const school = schoolData[params.id];
 
-  // Error state
-  if (error || !school) {
+  const handleEdit = () => {
+    alert('Fitur edit sedang dalam pengembangan');
+  };
+
+  const handleDelete = () => {
+    const confirmDelete = confirm(`Apakah Anda yakin ingin menghapus data "${school.name}"?`);
+    if (confirmDelete) {
+      alert(`Data "${school.name}" berhasil dihapus!`);
+      router.push('/Admin/sekolah');
+    }
+  };
+
+  if (!school) {
     return (
       <DashboardLayout title="Admin / Detail Sekolah">
         <div className="text-center py-12">
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg inline-block mb-4">
-            {error || 'Data sekolah tidak ditemukan'}
-          </div>
-          <br />
+          <p className="text-gray-500">Data sekolah tidak ditemukan</p>
           <button
             onClick={() => router.push('/Admin/sekolah')}
             className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
@@ -149,38 +66,6 @@ export default function DetailSekolah({ params }) {
       </DashboardLayout>
     );
   }
-
-
-
-  // const school = schoolData[params.id];
-
-  // const handleEdit = () => {
-  //   alert('Fitur edit sedang dalam pengembangan');
-  // };
-
-  // const handleDelete = () => {
-  //   const confirmDelete = confirm(`Apakah Anda yakin ingin menghapus data "${school.name}"?`);
-  //   if (confirmDelete) {
-  //     alert(`Data "${school.name}" berhasil dihapus!`);
-  //     router.push('/Admin/sekolah');
-  //   }
-  // };
-
-  // if (!school) {
-  //   return (
-  //     <DashboardLayout title="Admin / Detail Sekolah">
-  //       <div className="text-center py-12">
-  //         <p className="text-gray-500">Data sekolah tidak ditemukan</p>
-  //         <button
-  //           onClick={() => router.push('/Admin/sekolah')}
-  //           className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
-  //         >
-  //           Kembali ke Daftar Sekolah
-  //         </button>
-  //       </div>
-  //     </DashboardLayout>
-  //   );
-  // }
 
   return (
     <DashboardLayout title="Admin / Detail Sekolah">
@@ -254,29 +139,7 @@ export default function DetailSekolah({ params }) {
                 </span>
               </div>
 
-              {school.email && (
-                <div className="flex">
-                  <span className="w-56 text-sm font-medium text-gray-700">Email Sekolah</span>
-                  <span className="text-sm text-gray-900">: {school.email}</span>
-                </div>
-              )}
-
-              {school.alamat && (
-                <div className="flex">
-                  <span className="w-56 text-sm font-medium text-gray-700">Alamat Lengkap Sekolah</span>
-                  <span className="text-sm text-gray-900">: {school.alamat}</span>
-                </div>
-              )}
-
-             {school.deskripsi && (
-                <div className="flex">
-                  <span className="w-56 text-sm font-medium text-gray-700">Deskripsi Singkat Sekolah</span>
-                  <span className="text-sm text-gray-900">: {school.deskripsi}</span>
-                </div>
-              )}
-
-
-              {/* <div className="flex">
+              <div className="flex">
                 <span className="w-56 text-sm font-medium text-gray-700">Email Sekolah</span>
                 <span className="text-sm text-gray-900">: {school.email}</span>
               </div>
@@ -289,28 +152,28 @@ export default function DetailSekolah({ params }) {
               <div className="flex">
                 <span className="w-56 text-sm font-medium text-gray-700">Deskripsi Singkat Sekolah</span>
                 <span className="text-sm text-gray-900">: {school.deskripsi}</span>
-              </div> */}
+              </div>
 
               <div className="flex items-center">
-                <span className="w-56 text-sm font-medium text-gray-700">Status Klaim</span>
+                <span className="w-56 text-sm font-medium text-gray-700">Status</span>
                 <span className="text-sm">
                   : <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold ml-1 ${
-                    school.is_claimed
+                    school.status === 'Sudah Klaim'
                       ? 'bg-green-100 text-green-700 border border-green-300'
                       : 'bg-gray-100 text-gray-600 border border-gray-300'
                   }`}>
-                    {school.is_claimed && (
+                    {school.status === 'Sudah Klaim' && (
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
                       </svg>
                     )}
-                    {school.is_claimed ? 'Sudah Klaim' : 'Belum Klaim'}
+                    {school.status}
                   </span>
                 </span>
               </div>
             </div>
 
-          {/* Action Buttons */}
+            {/* Action Buttons */}
             <div className="flex gap-3 pt-6 border-t border-gray-200 justify-end">
               <button
                 onClick={handleEdit}
