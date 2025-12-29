@@ -1,10 +1,19 @@
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import DashboardLayout from '@/app/Admin/DashboardLayout';
 
-export default function TambahSekolah() {
+export default function EditSekolah() {
   const router = useRouter();
+  const params = useParams();
+  
+  // ALTERNATIF: Extract ID dari pathname jika params.id gagal
+  const schoolId = params?.id || (typeof window !== 'undefined' ? window.location.pathname.split('/').pop() : null);
+  
+  console.log('🔧 School ID:', schoolId);
+  console.log('🔧 From params:', params?.id);
+  console.log('🔧 From pathname:', typeof window !== 'undefined' ? window.location.pathname.split('/').pop() : null);
+  
   const [formData, setFormData] = useState({
     nama: '',
     npsn: ''
@@ -12,8 +21,78 @@ export default function TambahSekolah() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  // Fetch data sekolah untuk di-edit
+  useEffect(() => {
+    const fetchSchoolData = async () => {
+      try {
+        // LOG PERTAMA - CEK PARAMS
+        console.log('🔍 RAW PARAMS:', params);
+        console.log('🔍 params.id:', params?.id);
+        console.log('🔍 schoolId:', schoolId);
+        console.log('🔍 window.location.pathname:', window.location.pathname);
+        console.log('🔍 window.location.href:', window.location.href);
+        
+        if (!schoolId) {
+          console.error('❌ schoolId is undefined or null!');
+          setError('ID sekolah tidak ditemukan');
+          setIsFetching(false);
+          return;
+        }
+
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+          setError('Token tidak ditemukan. Silakan login kembali.');
+          setIsFetching(false);
+          return;
+        }
+
+        console.log('Fetching school data for ID:', schoolId);
+
+        const response = await fetch(
+          `https://ebating-ekarahma2846311-c0u04p9u.leapcell.dev/api/schools/${schoolId}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+
+        const data = await response.json();
+        
+        console.log('Fetched school data:', data);
+
+        if (!response.ok || !data.success) {
+          setError(data.message || 'Gagal mengambil data sekolah');
+          setIsFetching(false);
+          return;
+        }
+
+        // Set form data dengan data yang ada
+        setFormData({
+          nama: data.data.nama || '',
+          npsn: data.data.npsn || ''
+        });
+
+        // Set preview gambar jika ada
+        if (data.data.foto) {
+          setPreview(data.data.foto);
+        }
+
+      } catch (err) {
+        console.error('Error:', err);
+        setError('Terjadi kesalahan saat mengambil data');
+      } finally {
+        setIsFetching(false);
+      }
+    };
+
+    fetchSchoolData();
+  }, [schoolId]); // Ganti dependency dari params?.id ke schoolId
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -67,6 +146,12 @@ export default function TambahSekolah() {
       return;
     }
 
+    // VALIDASI ID SEBELUM REQUEST
+    if (!schoolId) {
+      setError('ID sekolah tidak ditemukan. Tidak dapat melakukan update.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -78,23 +163,75 @@ export default function TambahSekolah() {
         return;
       }
 
-      // Sesuaikan dengan endpoint API Anda
-      const response = await fetch('https://ebating-ekarahma2846311-c0u04p9u.leapcell.dev/api/schools', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      });
+      console.log('=== DEBUG UPDATE REQUEST ===');
+      console.log('params:', params);
+      console.log('params.id:', params?.id);
+      console.log('schoolId:', schoolId);
+      console.log('params.id type:', typeof params?.id);
+      console.log('schoolId type:', typeof schoolId);
+      console.log('formData:', formData);
+      console.log('selectedFile:', selectedFile);
+      console.log('===========================');
+
+      // SOLUSI ALTERNATIF: Coba kirim dalam format berbeda tergantung ada/tidaknya file
+      let response;
+      
+      if (selectedFile) {
+        // Jika ada file, gunakan FormData
+        const formDataToSend = new FormData();
+        // ❌ JANGAN kirim ID di body - ID sudah ada di URL!
+        // formDataToSend.append('id', String(schoolId)); 
+        formDataToSend.append('nama', formData.nama);
+        formDataToSend.append('npsn', formData.npsn);
+        formDataToSend.append('foto', selectedFile);
+
+        const apiUrl = `https://ebating-ekarahma2846311-c0u04p9u.leapcell.dev/api/schools/${schoolId}`;
+        console.log('API URL (with file):', apiUrl);
+        console.log('FormData contents:');
+        for (let [key, value] of formDataToSend.entries()) {
+          console.log(`  ${key}:`, value);
+        }
+
+        response = await fetch(apiUrl, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formDataToSend
+        });
+      } else {
+        // Jika tidak ada file, gunakan JSON
+        const apiUrl = `https://ebating-ekarahma2846311-c0u04p9u.leapcell.dev/api/schools/${schoolId}`;
+        const bodyData = {
+          // ❌ JANGAN kirim ID di body - ID sudah ada di URL!
+          // id: String(schoolId),
+          nama: formData.nama,
+          npsn: formData.npsn
+        };
+        
+        console.log('API URL (JSON):', apiUrl);
+        console.log('JSON body:', bodyData);
+
+        response = await fetch(apiUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(bodyData)
+        });
+      }
+
+      console.log('Response status:', response.status);
 
       const data = await response.json();
+      
+      console.log('Update response:', data);
 
       if (!response.ok || !data.success) {
-        // Handle error message yang lebih user-friendly
-        let errorMessage = data.message || 'Gagal menambahkan sekolah';
+        let errorMessage = data.message || 'Gagal mengupdate sekolah';
         
-        // Cek jika error duplicate NPSN
+        // Handle error duplicate NPSN
         if (errorMessage.includes('duplicate') || errorMessage.includes('npsn')) {
           errorMessage = 'NPSN sudah terdaftar! Gunakan NPSN yang berbeda.';
         }
@@ -104,7 +241,7 @@ export default function TambahSekolah() {
         return;
       }
 
-      // Success - Show modal
+      // Success
       setShowSuccessModal(true);
       setIsLoading(false);
 
@@ -125,13 +262,30 @@ export default function TambahSekolah() {
     router.push('/Admin/sekolah');
   };
 
+  // Loading state saat fetch data
+  if (isFetching) {
+    return (
+      <DashboardLayout title="Admin / Edit Sekolah">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <svg className="animate-spin h-10 w-10 text-blue-600 mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p className="text-gray-600">Memuat data sekolah...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
-    <DashboardLayout title="Admin / Tambah Sekolah">
+    <DashboardLayout title="Admin / Edit Sekolah">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-3xl font-bold text-gray-800">
-            Tambah Sekolah
+            Edit Sekolah
           </h2>
           <button
             onClick={handleBack}
@@ -143,11 +297,11 @@ export default function TambahSekolah() {
             Kembali
           </button>
         </div>
-        <div className="flex items-center gap-2 text-sm text-red-500">
+        <div className="flex items-center gap-2 text-sm text-blue-600">
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
           </svg>
-          <span>Silahkan lengkapi data sekolah</span>
+          <span>Edit data sekolah yang sudah ada</span>
         </div>
       </div>
 
@@ -181,11 +335,11 @@ export default function TambahSekolah() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
-                Upload Gambar
+                Ganti Gambar
               </div>
             </label>
             <span className="text-sm text-gray-400">
-              {selectedFile ? selectedFile.name : 'Belum Ada File dipilih'}
+              {selectedFile ? selectedFile.name : 'Belum ada perubahan'}
             </span>
           </div>
           <p className="text-xs text-gray-400 mt-2">
@@ -364,7 +518,7 @@ export default function TambahSekolah() {
                 </svg>
                 Menyimpan...
               </>
-            ) : 'Simpan'}
+            ) : 'Simpan Perubahan'}
           </button>
         </div>
       </form>
@@ -381,7 +535,7 @@ export default function TambahSekolah() {
               </div>
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Berhasil!</h3>
-            <p className="text-sm text-gray-600">Data sekolah berhasil disimpan</p>
+            <p className="text-sm text-gray-600">Data sekolah berhasil diupdate</p>
           </div>
         </div>
       )}
