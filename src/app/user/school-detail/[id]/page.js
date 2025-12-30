@@ -4,50 +4,106 @@
 
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 export default function SchoolDetailPage() {
   const params = useParams();
-  const schoolId = params.id;
+  const schoolId = params?.id;
 
-  // Data dummy sekolah (nanti bisa diganti dengan fetch dari API/database)
-  const schoolData = {
-    '1': {
-      name: 'SMP Negeri 1 Purwokerto',
-      logo: '/images/smp1.png',
-      website: 'smpn1purwokerto.sch.id',
-      rating: 4.5,
-      totalReviews: 280,
-      reviewerCount: 0,
-      maxReviewers: 3,
-      topRanking: 3,
-      verified: true
-    },
-    '2': {
-      name: 'SMA Negeri 2 Purwokerto',
-      logo: '/images/sma2.PNG',
-      website: 'sman2purwokerto.sch.id',
-      rating: 4.8,
-      totalReviews: 350,
-      reviewerCount: 2,
-      maxReviewers: 3,
-      topRanking: 2,
-      verified: true
-    },
-    '3': {
-      name: 'SMP Negeri 3 Purwokerto',
-      logo: '/images/smp3.PNG',
-      website: 'smpn3purwokerto.sch.id',
-      rating: 4.7,
-      totalReviews: 290,
-      reviewerCount: 1,
-      maxReviewers: 3,
-      topRanking: 1,
-      verified: true
+  const [school, setSchool] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    // Pastikan schoolId ada sebelum fetch
+    if (schoolId) {
+      fetchSchoolDetail();
+    }
+  }, [schoolId]); // Tambahkan schoolId ke dependency
+
+  const fetchSchoolDetail = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      console.log('Fetching school with ID:', schoolId);
+
+      // Ambil token jika ada
+      const token = localStorage.getItem('token');
+      
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      // Fetch detail sekolah berdasarkan ID
+      const response = await fetch(`/api/schools/${schoolId}`, {
+        method: 'GET',
+        headers: headers
+      });
+
+      console.log('Response status:', response.status);
+
+      const result = await response.json();
+      
+      console.log('School Detail Response:', result);
+
+      if (result.success) {
+        setSchool(result.data);
+      } else {
+        setError(result.message || 'Gagal mengambil detail sekolah');
+      }
+    } catch (err) {
+      console.error('Error fetching school detail:', err);
+      setError('Terjadi kesalahan saat mengambil data');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const school = schoolData[schoolId];
+  // Loading State
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-gray-600">Memuat detail sekolah...</p>
+        </div>
+      </div>
+    );
+  }
 
+  // Error State
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            {error}
+          </h1>
+          <div className="space-x-4">
+            <button 
+              onClick={fetchSchoolDetail}
+              className="text-blue-600 hover:text-blue-700 font-medium"
+            >
+              Coba Lagi
+            </button>
+            <Link 
+              href="/user" 
+              className="text-blue-600 hover:text-blue-700 font-medium"
+            >
+              Kembali ke Beranda
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // School Not Found
   if (!school) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -66,6 +122,11 @@ export default function SchoolDetailPage() {
     );
   }
 
+  // Format website URL
+  const websiteUrl = school.website 
+    ? (school.website.startsWith('http') ? school.website : `https://${school.website}`)
+    : null;
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-8">
       
@@ -77,15 +138,21 @@ export default function SchoolDetailPage() {
         
         {/* School Name with Verified Badge */}
         <div className="flex items-center justify-center gap-2">
-          <Link 
-            href={`https://${school.website}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:text-blue-700 font-semibold text-lg"
-          >
-            {school.name}
-          </Link>
-          {school.verified && (
+          {websiteUrl ? (
+            <Link 
+              href={websiteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-700 font-semibold text-lg"
+            >
+              {school.nama}
+            </Link>
+          ) : (
+            <span className="text-gray-900 font-semibold text-lg">
+              {school.nama}
+            </span>
+          )}
+          {school.is_claimed && (
             <svg 
               className="w-6 h-6 text-blue-600" 
               fill="currentColor" 
@@ -103,66 +170,82 @@ export default function SchoolDetailPage() {
 
       {/* Logo Section */}
       <div className="bg-gray-100 w-full max-w-3xl py-16 flex justify-center">
-        <img 
-          src={school.logo}
-          alt={`Logo ${school.name}`}
-          className="w-96 h-96 object-contain"
-          onError={(e) => {
-            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2UwZTBlMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE4IiBmaWxsPSIjOTk5IiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5Mb2dvPC90ZXh0Pjwvc3ZnPg==';
-          }}
-        />
+        {school.foto ? (
+          <img 
+            src={school.foto}
+            alt={`Logo ${school.nama}`}
+            className="w-96 h-96 object-contain"
+            onError={(e) => {
+              e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2UwZTBlMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE4IiBmaWxsPSIjOTk5IiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5Mb2dvPC90ZXh0Pjwvc3ZnPg==';
+            }}
+          />
+        ) : (
+          <div className="w-96 h-96 bg-gray-200 flex items-center justify-center">
+            <span className="text-gray-400 text-lg">No Image</span>
+          </div>
+        )}
       </div>
 
       {/* Info Section */}
       <div className="bg-white rounded-b-lg shadow-sm w-full max-w-3xl px-8 py-8 space-y-6">
         
-        {/* Top Ranking Badge */}
-        <div className="flex justify-center">
-          <span className="inline-block bg-white border-2 border-gray-300 text-gray-700 px-6 py-2 rounded-md font-semibold">
-            Top Ranking {school.topRanking}
-          </span>
-        </div>
+        {/* Top Ranking Badge - hanya jika ada ranking */}
+        {school.rank && (
+          <div className="flex justify-center">
+            <span className="inline-block bg-white border-2 border-gray-300 text-gray-700 px-6 py-2 rounded-md font-semibold">
+              Top Ranking {school.rank}
+            </span>
+          </div>
+        )}
 
         {/* Website Link */}
-        <div className="text-center">
-          <p className="text-gray-600 mb-2">Link Website:</p>
-          <Link 
-            href={`https://${school.website}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:text-blue-700 font-medium break-all"
-          >
-            {school.website}
-          </Link>
-        </div>
-
-        {/* Rating */}
-        <div className="text-center">
-          <div className="flex items-center justify-center gap-1 mb-2">
-            {[...Array(5)].map((_, index) => (
-              <svg 
-                key={index}
-                className={`w-6 h-6 ${index < Math.floor(school.rating) ? 'text-yellow-400' : 'text-gray-300'}`}
-                fill="currentColor" 
-                viewBox="0 0 20 20"
-              >
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-              </svg>
-            ))}
+        {websiteUrl && (
+          <div className="text-center">
+            <p className="text-gray-600 mb-2">Link Website:</p>
+            <Link 
+              href={websiteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-700 font-medium break-all"
+            >
+              {school.website}
+            </Link>
           </div>
-          <p className="text-gray-700 font-semibold text-lg">
-            {school.rating} / 5.0 
-            <span className="text-gray-500 font-normal"> ({school.totalReviews})</span>
-          </p>
-        </div>
+        )}
 
-        {/* Reviewer Count */}
-        <div className="text-center">
-          <p className="text-gray-700">
-            <span className="font-semibold">Jumlah Reviewer:</span>{' '}
-            {school.reviewerCount}/{school.maxReviewers}
-          </p>
-        </div>
+        {/* Rating - hanya jika ada data rating */}
+        {school.rating && (
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-1 mb-2">
+              {[...Array(5)].map((_, index) => (
+                <svg 
+                  key={index}
+                  className={`w-6 h-6 ${index < Math.floor(school.rating) ? 'text-yellow-400' : 'text-gray-300'}`}
+                  fill="currentColor" 
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+              ))}
+            </div>
+            <p className="text-gray-700 font-semibold text-lg">
+              {school.rating} / 5.0 
+              {school.total_reviews && (
+                <span className="text-gray-500 font-normal"> ({school.total_reviews})</span>
+              )}
+            </p>
+          </div>
+        )}
+
+        {/* Reviewer Count - jika ada */}
+        {(school.reviewer_count !== undefined || school.max_reviewers) && (
+          <div className="text-center">
+            <p className="text-gray-700">
+              <span className="font-semibold">Jumlah Reviewer:</span>{' '}
+              {school.reviewer_count || 0}/{school.max_reviewers || 3}
+            </p>
+          </div>
+        )}
 
         {/* Comment Button */}
         <div className="flex justify-center pt-2">
