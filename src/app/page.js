@@ -15,7 +15,7 @@ export default function DashboardPage() {
       {/* Hero Section - Full Screen */}
       <div className="min-h-screen bg-gray-100 flex flex-col justify-center items-center px-6 text-center">
         <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight">
-          TEMUKAN SEKOLAH TERBAIK DI DAERAHMUUUUUU!
+          TEMUKAN SEKOLAH TERBAIK DI DAERAHMU!
         </h1>
         <p className="text-base text-gray-700 mb-8 max-w-2xl mx-auto">
           Platform rating sekolah terpercaya untuk membantu Anda menemukan sekolah terbaik.
