@@ -1,4 +1,4 @@
-// src/app/User/components/UserHeader.js
+// src/app/user/components/UserHeader.js
 'use client';
 
 import { useState } from 'react';

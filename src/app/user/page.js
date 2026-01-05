@@ -1,10 +1,10 @@
-// src/app/User/page.js
+// src/app/user/page.js
 "use client";
 
 import Link from "next/link";
 import Image from "next/image";
-import UserHeader from "./components/UserHeader";
-import UserFooter from "./components/UserFooter";
+import UserHeader from "@/components/UserHeader";
+import UserFooter from "@/components/UserFooter";
 
 export default function DashboardPage() {
   return (
