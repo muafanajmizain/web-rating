@@ -1,4 +1,3 @@
-// src/app/User/about/page.js
 'use client'
 export default function AboutPage() {
   return (

@@ -14,7 +14,7 @@ export default function ContactPage() {
         {/* Deskripsi */}
         <div className="mb-8">
           <p className="text-lg leading-relaxed text-gray-700">
-            Website SchoolRank percaya bahwa setiap sekolah memiliki potensi untuk berkembang, berinovasi, dan berprestasi melalui pencetakan generasi unggul bangsa. Melalui sistem rating yang akurat, objektif, dan terpercaya, kami berkomitmen untuk membantu masyarakat mendapatkan informasi sekolah yang transparan dan relevan.
+            Website OnTheWeb percaya bahwa setiap sekolah memiliki potensi untuk berkembang, berinovasi, dan berprestasi melalui pencetakan generasi unggul bangsa. Melalui sistem rating yang akurat, objektif, dan terpercaya, kami berkomitmen untuk membantu masyarakat mendapatkan informasi sekolah yang transparan dan relevan.
           </p>
           <p className="text-lg leading-relaxed text-gray-700 mt-4">
             Kami hadir sebagai jembatan antara masyarakat dan dunia pendidikan, agar setiap orang tua, siswa, maupun pihak sekolah dapat bersama-sama mewujudkan pendidikan yang lebih berkualitas, berkarater, dan berdaya di seluruh daerah Indonesia.
