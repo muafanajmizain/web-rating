@@ -1,16 +1,11 @@
-// src/app/user/page.js
 "use client";
 
 import Link from "next/link";
 import Image from "next/image";
-import UserHeader from "@/components/UserHeader";
-import UserFooter from "@/components/UserFooter";
 
 export default function DashboardPage() {
   return (
     <>
-      <UserHeader />
-
       {/* Hero Section - Simple Gray Background */}
       <section className="relative flex flex-col items-center justify-center min-h-screen text-center px-6 pt-24 bg-gray-100">
         <div className="relative z-10 max-w-6xl mx-auto">
@@ -222,8 +217,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-
-      <UserFooter />
     </>
   );
 }

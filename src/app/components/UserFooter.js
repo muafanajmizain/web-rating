@@ -1,4 +1,3 @@
-// src/app/user/components/UserFooter.js
 'use client';
 
 import Link from 'next/link';

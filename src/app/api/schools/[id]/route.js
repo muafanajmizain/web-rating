@@ -1,4 +1,3 @@
-// src/app/api/schools/[id]/route.js
 import { NextResponse } from 'next/server';
 
 // GET - Fetch school by ID
