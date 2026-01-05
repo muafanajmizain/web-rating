@@ -1,32 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
 
 @import "tailwindcss";
-
-/* Reset & Base Styles */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-html {
-  overflow-x: hidden;
-  scroll-behavior: smooth;
-}
+/* @tailwind base;
+@tailwind components;
+@tailwind utilities; */
 
 body {
   font-family: 'Outfit', sans-serif;
-  overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Hilangkan scrollbar horizontal di semua elemen */
-body::-webkit-scrollbar-track {
-  background: transparent;
+.hide-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE dan Edge */
 }
 
-/* Table Container dengan Custom Scrollbar */
 .table-container {
   max-height: calc(100vh - 380px);
   overflow-y: auto;
@@ -48,104 +35,4 @@ body::-webkit-scrollbar-track {
 
 .table-container::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
-}
-
-/* Custom Scrollbar untuk Vertical (Optional - Uncomment jika ingin custom) */
-/* 
-::-webkit-scrollbar {
-  width: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 5px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-*/
-
-/* Hilangkan Scrollbar Sepenuhnya (Uncomment jika ingin hilangkan total) */
-/*
-* {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-*::-webkit-scrollbar {
-  display: none;
-}
-*/
-
-/* Smooth Transitions */
-a, button {
-  transition: all 0.3s ease;
-}
-
-/* Focus Styles untuk Accessibility */
-a:focus,
-button:focus,
-input:focus,
-textarea:focus,
-select:focus {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
-}
-
-/* Image Optimization */
-img {
-  max-width: 100%;
-  height: auto;
-  display: block;
-}
-
-/* Link Default Styles */
-a {
-  text-decoration: none;
-  color: inherit;
-}
-
-/* Selection Color */
-::selection {
-  background-color: #3b82f6;
-  color: white;
-}
-
-::-moz-selection {
-  background-color: #3b82f6;
-  color: white;
-}
-
-/* Loading Animation (Optional) */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.fade-in {
-  animation: fadeIn 0.5s ease-in-out;
-}
-
-/* Responsive Typography (Optional Enhancement) */
-@media (max-width: 768px) {
-  body {
-    font-size: 14px;
-  }
-}
-
-@media (max-width: 640px) {
-  body {
-    font-size: 13px;
-  }
 }
