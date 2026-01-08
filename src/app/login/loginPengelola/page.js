@@ -1,17 +1,17 @@
-'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+"use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function LoginPengelola() {
   const router = useRouter();
-  const [npsn, setNpsn] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [npsn, setNpsn] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   // mencegah reload halaman (loadingnya ga keliatan)
   const handleLogin = async (e) => {
-        e.preventDefault(); 
+    e.preventDefault();
 
     try {
       const username = npsn;
@@ -21,20 +21,19 @@ export default function LoginPengelola() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
-   
+
       // 2. Parse response
       const data = await response.json();
       // 3. Cek apakah login gagal?
       if (!data.success) {
-        setError(data.message || 'Login failed. Please try again.');
+        setError(data.message || "Login failed. Please try again.");
         return;
       }
-      
-      // Redirect ke dashboard jika sukses
-      router.push('/pengelola-sekolah');
 
+      // Redirect ke dashboard jika sukses
+      router.push("/pengelola-sekolah");
     } catch (err) {
-      setError('Username atau Password salah.');
+      setError("Username atau Password salah.");
     }
   };
 
@@ -42,9 +41,10 @@ export default function LoginPengelola() {
     <div
       className="min-h-screen flex items-center justify-center relative"
       style={{
-        backgroundImage: "url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?q=80&w=1920')",
-        backgroundSize: 'cover',
-        backgroundPosition: 'center'
+        backgroundImage:
+          "url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?q=80&w=1920')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
       }}
     >
       {/* Overlay */}
@@ -56,13 +56,17 @@ export default function LoginPengelola() {
         <div className="text-center mb-8">
           <p className="text-white text-sm mb-2">Sistem Rating Web Sekolah</p>
           <h1 className="text-white text-2xl font-bold leading-tight">
-            BERSAMA WUJUDKAN WEBSITE SEKOLAH<br />YANG LEBIH BAIK
+            BERSAMA WUJUDKAN WEBSITE SEKOLAH
+            <br />
+            YANG LEBIH BAIK
           </h1>
         </div>
 
         {/* Login Card */}
         <div className="bg-white rounded-2xl shadow-2xl p-8">
-          <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">Login Pengelola Sekolah</h2>
+          <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">
+            Login Pengelola Sekolah
+          </h2>
 
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm">
@@ -105,7 +109,10 @@ export default function LoginPengelola() {
 
             {/* Lupa Password Link */}
             <div className="text-center">
-              <Link href="/lupa-password" className="text-blue-600 hover:text-blue-700 text-sm">
+              <Link
+                href="/lupa-password"
+                className="text-blue-600 hover:text-blue-700 text-sm"
+              >
                 Lupa password ?
               </Link>
             </div>
@@ -114,7 +121,9 @@ export default function LoginPengelola() {
 
         {/* Footer */}
         <div className="text-center mt-6">
-          <p className="text-white text-sm">© 2025 SchoolRank. All Rights Reserved.</p>
+          <p className="text-white text-sm">
+            © 2025 SchoolRank. All Rights Reserved.
+          </p>
         </div>
       </div>
     </div>
