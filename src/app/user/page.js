@@ -1,18 +1,13 @@
-// src/app/User/page.js
 "use client";
 
 import Link from "next/link";
 import Image from "next/image";
-import UserHeader from "./components/UserHeader";
-import UserFooter from "./components/UserFooter";
 
 export default function DashboardPage() {
   return (
     <>
-      <UserHeader />
-
       {/* Hero Section - Simple Gray Background */}
-      <section className="relative flex flex-col items-center justify-center min-h-screen text-center px-6 pt-24 bg-gray-100">
+      <section className="relative flex flex-col items-center justify-center min-h-screen text-center px-6 pt-0 pb-32 bg-gray-100">
         <div className="relative z-10 max-w-6xl mx-auto">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-gray-900 leading-tight">
             TEMUKAN SEKOLAH TERBAIK DI DAERAHMU!
@@ -222,8 +217,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-
-      <UserFooter />
     </>
   );
 }

@@ -9,6 +9,11 @@ body {
   font-family: 'Outfit', sans-serif;
 }
 
+.hide-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE dan Edge */
+}
+
 .table-container {
   max-height: calc(100vh - 380px);
   overflow-y: auto;

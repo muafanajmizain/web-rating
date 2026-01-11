@@ -1,5 +1,3 @@
-// src/app/user/school-detail/[id]/page.js
-
 'use client';
 
 import { useParams } from 'next/navigation';
