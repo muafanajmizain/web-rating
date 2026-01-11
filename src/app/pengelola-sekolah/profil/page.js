@@ -1,3 +1,5 @@
+// src/app/pengelola-sekolah/profil/page.js
+
 'use client';
 import { useState } from 'react';
 import DashboardLayout from '../DashboardLayout';
