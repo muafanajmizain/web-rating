@@ -6,54 +6,81 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 export default function Page() {
-  const schoolsData = [
-    {
-      id: 1,
-      name: "SMA N 1 Purwokerto",
-      jenjang: "SMA",
-      image: "https://placehold.co/300x150/6B7FD7/ffffff?text=SMA+N+1+Purwokerto",
-      url: "https://website-sekolah-project.vercel.app/",
-      reviewer: "1/5"
-    },
-    {
-      id: 2,
-      name: "SMA IT Al-Irsyad",
-      jenjang: "SMA",
-      image: "https://placehold.co/300x150/6B7FD7/ffffff?text=SMA+IT+Al-Irsyad",
-      url: "https://website-sekolah-project.vercel.app/",
-      reviewer: "2/5"
-    },
-    {
-      id: 3,
-      name: "MAN 1 Banyumas",
-      jenjang: "MAN",
-      image: "https://placehold.co/300x150/6B7FD7/ffffff?text=MAN+1+Banyumas",
-      url: "https://website-sekolah-project.vercel.app/",
-      reviewer: "3/5"
-    },
-    {
-      id: 4,
-      name: "SMA N 2 Purwokerto",
-      jenjang: "SMA",
-      image: "https://placehold.co/300x150/6B7FD7/ffffff?text=SMA+N+2+Purwokerto",
-      url: "https://website-sekolah-project.vercel.app/",
-      reviewer: "0/5"
-    },
-    {
-      id: 5,
-      name: "SMK N 1 Purwokerto",
-      jenjang: "SMK",
-      image: "https://placehold.co/300x150/6B7FD7/ffffff?text=SMK+N+1+Purwokerto",
-      url: "https://website-sekolah-project.vercel.app/",
-      reviewer: "4/5"
-    }
-  ];
+  const [schoolsData, setSchoolsData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const [jenjang, setJenjang] = useState('');
   const [status, setStatus] = useState('');
   const [search, setSearch] = useState('');
-  const [filtered, setFiltered] = useState(schoolsData);
+  const [filtered, setFiltered] = useState([]);
 
+  const getToken = () => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('token');
+    }
+    return null;
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const token = getToken();
+        if (!token) {
+          throw new Error('Token tidak ditemukan. Silakan login ulang.');
+        }
+
+        const res = await fetch('/api/schools', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error(`Gagal memuat  ${res.status} ${res.statusText}`);
+        }
+
+        const apiResponse = await res.json();
+
+        if (!apiResponse.success || !Array.isArray(apiResponse.data)) {
+          throw new Error('Format data tidak valid dari server.');
+        }
+
+        // Ambil ID sekolah yang sudah direview oleh user ini
+        const myReviews = JSON.parse(localStorage.getItem('myReviews') || '[]');
+        const reviewedIds = new Set(myReviews.map(review => review.schoolId));
+
+        // Filter hanya sekolah yang BELUM direview
+        const unreviewedSchools = apiResponse.data.filter(school => !reviewedIds.has(school.id));
+
+        // Format data sesuai struktur backend: "nama", "jenjang", "website"
+        const formattedData = unreviewedSchools.map(school => ({
+          id: school.id,
+          name: school.nama || 'Nama Sekolah Tidak Tersedia',
+          jenjang: school.jenjang || 'SMA',
+          image: school.image_url || `https://placehold.co/300x150/6B7FD7/ffffff?text=${encodeURIComponent(school.nama || 'Sekolah')}`,
+          url: school.website || '#',
+          reviewer: `${school.reviewer_count || 0}/${school.total_reviewer || 5}`
+        }));
+
+        setSchoolsData(formattedData);
+        setFiltered(formattedData);
+      } catch (err) {
+        console.error('Error fetching schools:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Filter berdasarkan input
   useEffect(() => {
     let data = [...schoolsData];
 
@@ -63,7 +90,7 @@ export default function Page() {
 
     if (status) {
       data = data.filter(d => {
-        const val = parseInt(d.reviewer.split('/')[0]);
+        const val = parseInt(d.reviewer.split('/')[0], 10);
         if (status === 'belum') return val === 0;
         if (status === 'sebagian') return val >= 1 && val <= 4;
         if (status === 'selesai') return val === 5;
@@ -78,7 +105,34 @@ export default function Page() {
     }
 
     setFiltered(data);
-  }, [jenjang, status, search]);
+  }, [jenjang, status, search, schoolsData]);
+
+  // Render UI
+  if (loading) {
+    return (
+      <div className="p-8 flex-1 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mr-3"></div>
+        <span className="text-gray-600">Memuat daftar sekolah...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 flex-1">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-2xl">
+          <h3 className="text-lg font-bold text-red-800 mb-2">Gagal Memuat Data</h3>
+          <p className="text-red-700 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+          >
+            Coba Lagi
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-6 flex-1 overflow-hidden">
@@ -87,7 +141,7 @@ export default function Page() {
       {/* Filter dan Pencarian */}
       <div className="flex flex-col sm:flex-row gap-3 mb-5">
         <select
-          onChange={e => setJenjang(e.target.value)}
+          onChange={(e) => setJenjang(e.target.value)}
           className="border border-gray-300 px-3 py-1.5 rounded text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none"
         >
           <option value="">Semua Jenjang</option>
@@ -97,7 +151,7 @@ export default function Page() {
         </select>
 
         <select
-          onChange={e => setStatus(e.target.value)}
+          onChange={(e) => setStatus(e.target.value)}
           className="border border-gray-300 px-3 py-1.5 rounded text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none"
         >
           <option value="">Status Reviewer</option>
@@ -109,12 +163,12 @@ export default function Page() {
         <input
           type="text"
           placeholder="Cari nama sekolah..."
-          onChange={e => setSearch(e.target.value)}
+          onChange={(e) => setSearch(e.target.value)}
           className="border border-gray-300 px-3 py-1.5 rounded text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none flex-1 min-w-0"
         />
       </div>
 
-      {/* Tabel - disesuaikan dengan setelan compact */}
+      {/* Tabel */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-gray-700">
@@ -131,7 +185,7 @@ export default function Page() {
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="px-3 py-5 text-center text-gray-400">
-                    Data kosong, bukan error—tenang.
+                    Tidak ada data yang sesuai filter.
                   </td>
                 </tr>
               ) : (
@@ -147,7 +201,7 @@ export default function Page() {
                         rel="noopener noreferrer"
                         className="text-xs text-blue-600 hover:underline mt-0.5 inline-block"
                       >
-                        {school.url}
+                        {school.url === '#' ? 'Website tidak tersedia' : school.url}
                       </a>
                     </td>
                     <td className="px-3 py-2.5 text-center">
