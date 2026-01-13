@@ -16,7 +16,7 @@ export async function GET(request, { params }) {
     console.log("Fetching school detail with ID:", id);
 
     const res = await fetch(
-      `https://ebating-ekarahma2846311-c0u04p9u.leapcell.dev/api/schools/${id}`,
+      `${process.env.NEXT_PUBLIC_BASE_URL_API}/api/schools/${id}`,
       {
         method: "GET",
         headers: {
@@ -77,7 +77,7 @@ export async function PUT(request, { params }) {
     console.log("Update data:", body);
 
     const res = await fetch(
-      `https://ebating-ekarahma2846311-c0u04p9u.leapcell.dev/api/schools/${id}`,
+      `${process.env.NEXT_PUBLIC_BASE_URL_API}/api/schools/${id}`,
       {
         method: "PUT",
         headers: {
@@ -137,7 +137,7 @@ export async function DELETE(request, { params }) {
     console.log("Deleting school with ID:", id);
 
     const res = await fetch(
-      `https://ebating-ekarahma2846311-c0u04p9u.leapcell.dev/api/schools/${id}`,
+      `${process.env.NEXT_PUBLIC_BASE_URL_API}/api/schools/${id}`,
       {
         method: "DELETE",
         headers: {

@@ -1,15 +1,15 @@
-import { NextResponse } from 'next/server';
-import axios from 'axios';
+import axios from "axios";
+import { NextResponse } from "next/server";
 
 export async function POST(request) {
   try {
     const { username, password } = await request.json();
     const response = await axios.post(
-      'https://ebating-ekarahma2846311-c0u04p9u.leapcell.dev/api/auth/login',
+      `${process.env.NEXT_PUBLIC_BASE_URL_API}/api/auth/login`,
       { username, password },
       {
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       }
     );
@@ -21,14 +21,13 @@ export async function POST(request) {
     return NextResponse.json(data);
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      return NextResponse.json(
-        error.response.data,
-        { status: error.response.status }
-      );
+      return NextResponse.json(error.response.data, {
+        status: error.response.status,
+      });
     }
-    
+
     return NextResponse.json(
-      { message: 'Internal Server Error' },
+      { message: "Internal Server Error" },
       { status: 500 }
     );
   }
