@@ -1,50 +1,13 @@
-// src/app/Reviewer/data-sekolah/detail/[id]/page.js
+// src/app/Reviewer/review-saya/detail/[id]/page.js
 
 'use client';
 
-import { useEffect, useState } from 'react';
 import { use } from 'react';
+import { useSchoolDetailLocal } from '@/hooks/useSWR';
 
 export default function SchoolDetailPage({ params }) {
   const { id } = use(params);
-  const [school, setSchool] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const fetchSchool = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('Token tidak ditemukan. Silakan login.');
-        }
-
-        const res = await fetch(`/api/schools/${id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!res.ok) {
-          throw new Error(`Gagal memuat detail: ${res.status}`);
-        }
-
-        const data = await res.json();
-        setSchool(data);
-      } catch (err) {
-        console.error('Error fetching school detail:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSchool();
-  }, [id]);
+  const { school, isLoading: loading, isError: error } = useSchoolDetailLocal(id);
 
   if (loading) {
     return (
@@ -60,7 +23,7 @@ export default function SchoolDetailPage({ params }) {
       <div className="p-8">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-3xl">
           <h3 className="text-red-800 font-bold mb-2">Gagal Memuat Detail Sekolah</h3>
-          <p className="text-red-700 mb-4">{error}</p>
+          <p className="text-red-700 mb-4">Terjadi kesalahan saat mengambil data</p>
           <button
             onClick={() => window.history.back()}
             className="text-blue-600 hover:underline"

@@ -2,86 +2,43 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import { useReviewerSchools } from '@/hooks/useSWR';
 
 export default function Page() {
-  const [schoolsData, setSchoolsData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { schools: rawSchools, isLoading: loading, isError: error } = useReviewerSchools();
 
   const [jenjang, setJenjang] = useState('');
   const [status, setStatus] = useState('');
   const [search, setSearch] = useState('');
-  const [filtered, setFiltered] = useState([]);
 
-  const getToken = () => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('token');
-    }
-    return null;
-  };
+  // Format and filter schools data
+  const schoolsData = useMemo(() => {
+    if (!rawSchools) return [];
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
+    // Ambil ID sekolah yang sudah direview oleh user ini
+    const myReviews = typeof window !== 'undefined'
+      ? JSON.parse(localStorage.getItem('myReviews') || '[]')
+      : [];
+    const reviewedIds = new Set(myReviews.map(review => review.schoolId));
 
-      try {
-        const token = getToken();
-        if (!token) {
-          throw new Error('Token tidak ditemukan. Silakan login ulang.');
-        }
+    // Filter hanya sekolah yang BELUM direview
+    const unreviewedSchools = rawSchools.filter(school => !reviewedIds.has(school.id));
 
-        const res = await fetch('/api/schools', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!res.ok) {
-          throw new Error(`Gagal memuat  ${res.status} ${res.statusText}`);
-        }
-
-        const apiResponse = await res.json();
-
-        if (!apiResponse.success || !Array.isArray(apiResponse.data)) {
-          throw new Error('Format data tidak valid dari server.');
-        }
-
-        // Ambil ID sekolah yang sudah direview oleh user ini
-        const myReviews = JSON.parse(localStorage.getItem('myReviews') || '[]');
-        const reviewedIds = new Set(myReviews.map(review => review.schoolId));
-
-        // Filter hanya sekolah yang BELUM direview
-        const unreviewedSchools = apiResponse.data.filter(school => !reviewedIds.has(school.id));
-
-        // Format data sesuai struktur backend: "nama", "jenjang", "website"
-        const formattedData = unreviewedSchools.map(school => ({
-          id: school.id,
-          name: school.nama || 'Nama Sekolah Tidak Tersedia',
-          jenjang: school.jenjang || 'SMA',
-          image: school.image_url || `https://placehold.co/300x150/6B7FD7/ffffff?text=${encodeURIComponent(school.nama || 'Sekolah')}`,
-          url: school.website || '#',
-          reviewer: `${school.reviewer_count || 0}/${school.total_reviewer || 5}`
-        }));
-
-        setSchoolsData(formattedData);
-        setFiltered(formattedData);
-      } catch (err) {
-        console.error('Error fetching schools:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
+    // Format data sesuai struktur backend
+    return unreviewedSchools.map(school => ({
+      id: school.id,
+      name: school.nama || 'Nama Sekolah Tidak Tersedia',
+      jenjang: school.jenjang || 'SMA',
+      image: school.image_url || `https://placehold.co/300x150/6B7FD7/ffffff?text=${encodeURIComponent(school.nama || 'Sekolah')}`,
+      url: school.website || '#',
+      reviewer: `${school.reviewer_count || 0}/${school.total_reviewer || 5}`
+    }));
+  }, [rawSchools]);
 
   // Filter berdasarkan input
-  useEffect(() => {
+  const filtered = useMemo(() => {
     let data = [...schoolsData];
 
     if (jenjang) {
@@ -104,7 +61,7 @@ export default function Page() {
       );
     }
 
-    setFiltered(data);
+    return data;
   }, [jenjang, status, search, schoolsData]);
 
   // Render UI

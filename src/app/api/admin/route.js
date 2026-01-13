@@ -3,6 +3,23 @@
 // import { NextResponse } from 'next/server';
 import axios from "axios";
 
+export const getSummary = async () => {
+  try {
+    const response = await axios.get(
+      `${process.env.NEXT_PUBLIC_BASE_URL_API}/api/summary`
+    );
+
+    return response.data;
+  } catch (error) {
+    return (
+      error?.response?.data || {
+        success: false,
+        message: "Terjadi kesalahan",
+      }
+    );
+  }
+};
+
 export const getAllSchool = async (token) => {
   try {
     const response = await axios.get(

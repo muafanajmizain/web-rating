@@ -1,68 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import DashboardLayout from "@/app/Admin/DashboardLayout";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useSchoolDetail } from "@/hooks/useSWR";
 
 export default function DetailSekolah() {
   const router = useRouter();
   const params = useParams();
-  const [school, setSchool] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { school, isLoading: loading, isError: error } = useSchoolDetail(params?.id);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  useEffect(() => {
-    const fetchSchoolDetail = async () => {
-      try {
-        // Validasi params.id
-        if (!params?.id) {
-          setError("ID sekolah tidak ditemukan");
-          setLoading(false);
-          return;
-        }
-
-        const token = localStorage.getItem("token");
-
-        if (!token) {
-          setError("Token tidak ditemukan. Silakan login kembali.");
-          setLoading(false);
-          return;
-        }
-
-        console.log("Fetching school with ID:", params.id);
-
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL_API}/api/schools/${params.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        const data = await response.json();
-
-        console.log("Response data:", data);
-
-        if (!response.ok || !data.success) {
-          setError(data.message || "Gagal mengambil data sekolah");
-          setLoading(false);
-          return;
-        }
-
-        setSchool(data.data);
-      } catch (err) {
-        console.error("Error:", err);
-        setError("Terjadi kesalahan saat mengambil data");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSchoolDetail();
-  }, [params?.id]);
 
   const handleEdit = () => {
     if (!params?.id) {

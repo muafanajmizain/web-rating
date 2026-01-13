@@ -1,58 +1,20 @@
 // src/app/user/all-rankings/page.js
 'use client'
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import { usePublicSchools } from '@/hooks/useSWR';
 
 export default function AllRankingsPage() {
   const [jenjang, setJenjang] = useState('semua');
-  const [schools, setSchools] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { schools: rawSchools, isLoading: loading, isError: error, mutate } = usePublicSchools();
 
-  useEffect(() => {
-    fetchSchools();
-  }, []);
-
-  const fetchSchools = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // const token = localStorage.getItem('token');
-      
-      const headers = {
-        'Content-Type': 'application/json',
-      };
-      
-      // if (token) {
-      //   headers['Authorization'] = `Bearer ${token}`;
-      // }
-
-      const response = await fetch('/api/schools', {
-        method: 'GET',
-        headers: headers
-      });
-
-      const result = await response.json();
-      
-      console.log('All Rankings API Response:', result);
-
-      if (result.success) {
-        const schoolsWithRank = result.data.map((school, index) => ({
-          ...school,
-          rank: index + 1
-        }));
-        setSchools(schoolsWithRank);
-      } else {
-        setError(result.message || 'Gagal mengambil data sekolah');
-      }
-    } catch (err) {
-      console.error('Error fetching schools:', err);
-      setError('Terjadi kesalahan saat mengambil data');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Add rank to schools
+  const schools = useMemo(() => {
+    return rawSchools.map((school, index) => ({
+      ...school,
+      rank: index + 1
+    }));
+  }, [rawSchools]);
 
   const filteredSchools = jenjang === 'semua' 
     ? schools 
@@ -92,9 +54,9 @@ export default function AllRankingsPage() {
       ) : error ? (
         <div className="container mx-auto p-6">
           <div className="text-center py-12">
-            <p className="text-red-600 mb-4">{error}</p>
-            <button 
-              onClick={fetchSchools}
+            <p className="text-red-600 mb-4">Gagal mengambil data sekolah</p>
+            <button
+              onClick={() => mutate()}
               className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700"
             >
               Coba Lagi
