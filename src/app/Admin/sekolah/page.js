@@ -1,53 +1,28 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/app/Admin/DashboardLayout';
-import { getAllSchool } from '@/app/api/admin/route';
+import { useSchools } from '@/hooks/useSWR';
 
 export default function DaftarSekolah() {
   const router = useRouter();
-  const [schools, setSchools] = useState([]);
-  const [filteredSchools, setFilteredSchools] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { schools, isLoading: loading, isError: error } = useSchools();
   const [statusFilter, setStatusFilter] = useState('');
 
-  useEffect(() => {
-    const fetchSekolah = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        console.log(token);
-
-        const response = await getAllSchool(token);
-
-        setSchools(response.data);
-        setFilteredSchools(response.data);
-      } catch (err) {
-        console.error(err);
-        setError('Gagal mengambil data sekolah');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSekolah();
-  }, []);
+  const filteredSchools = useMemo(() => {
+    if (!schools) return [];
+    if (statusFilter === '') return schools;
+    if (statusFilter === 'Sudah Klaim') {
+      return schools.filter((school) => school.is_claimed === true);
+    }
+    if (statusFilter === 'Belum Klaim') {
+      return schools.filter((school) => school.is_claimed === false);
+    }
+    return schools;
+  }, [schools, statusFilter]);
 
   const handleFilterChange = (e) => {
-    const value = e.target.value;
-    setStatusFilter(value);
-
-    if (value === '') {
-      setFilteredSchools(schools);
-    } else if (value === 'Sudah Klaim') {
-      setFilteredSchools(
-        schools.filter((school) => school.is_claimed === true)
-      );
-    } else if (value === 'Belum Klaim') {
-      setFilteredSchools(
-        schools.filter((school) => school.is_claimed === false)
-      );
-    }
+    setStatusFilter(e.target.value);
   };
 
   const handleDetail = (school) => {
@@ -128,7 +103,7 @@ export default function DaftarSekolah() {
       {/* Error State */}
       {error && !loading && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-600 text-sm">
-          {error}
+          Gagal mengambil data sekolah
         </div>
       )}
 

@@ -2,65 +2,13 @@
 
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useSchoolDetailLocal } from '@/hooks/useSWR';
 
 export default function SchoolDetailPage() {
   const params = useParams();
   const schoolId = params?.id;
 
-  const [school, setSchool] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    // Pastikan schoolId ada sebelum fetch
-    if (schoolId) {
-      fetchSchoolDetail();
-    }
-  }, [schoolId]); // Tambahkan schoolId ke dependency
-
-  const fetchSchoolDetail = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      console.log('Fetching school with ID:', schoolId);
-
-      // Ambil token jika ada
-      const token = localStorage.getItem('token');
-      
-      const headers = {
-        'Content-Type': 'application/json',
-      };
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      // Fetch detail sekolah berdasarkan ID
-      const response = await fetch(`/api/schools/${schoolId}`, {
-        method: 'GET',
-        headers: headers
-      });
-
-      console.log('Response status:', response.status);
-
-      const result = await response.json();
-      
-      console.log('School Detail Response:', result);
-
-      if (result.success) {
-        setSchool(result.data);
-      } else {
-        setError(result.message || 'Gagal mengambil detail sekolah');
-      }
-    } catch (err) {
-      console.error('Error fetching school detail:', err);
-      setError('Terjadi kesalahan saat mengambil data');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { school, isLoading: loading, isError: error, mutate } = useSchoolDetailLocal(schoolId);
 
   // Loading State
   if (loading) {
@@ -80,17 +28,17 @@ export default function SchoolDetailPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            {error}
+            Gagal mengambil detail sekolah
           </h1>
           <div className="space-x-4">
-            <button 
-              onClick={fetchSchoolDetail}
+            <button
+              onClick={() => mutate()}
               className="text-blue-600 hover:text-blue-700 font-medium"
             >
               Coba Lagi
             </button>
-            <Link 
-              href="/user" 
+            <Link
+              href="/user"
               className="text-blue-600 hover:text-blue-700 font-medium"
             >
               Kembali ke Beranda

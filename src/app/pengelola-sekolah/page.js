@@ -1,69 +1,37 @@
 // src/app/pengelola-sekolah/page.js
 
 "use client";
+import { useState, useMemo } from "react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import DashboardLayout from "./DashboardLayout";
+import { useSchoolReviews } from "@/hooks/useSWR";
 
 export default function PengelolaDashboard() {
   const [notificationCount] = useState(3);
-  const [reviews, setReviews] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   // TODO: Ambil schoolId dari localStorage setelah login
   const schoolId = 1;
 
-  useEffect(() => {
-    fetchReviews();
-  }, []);
+  const { reviews: rawReviews, isLoading: loading, isError: error, mutate } = useSchoolReviews(schoolId);
 
-  const fetchReviews = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Panggil API Route Next.js (bukan langsung ke backend)
-      const response = await fetch(`/api/reviews/school/${schoolId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.message || "Gagal mengambil data review");
-      }
-
-      console.log("Data dari API:", result.data); // Debug
-
-      // Transform data
-      const transformedReviews = result.data.map((review) => ({
-        id: review.id,
-        name: review.reviewer?.name || review.reviewerName || "Reviewer",
-        reviewerId: review.reviewerId,
-        date: new Date(review.createdAt).toLocaleDateString("id-ID", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }),
-        rating: review.rating || 0,
-        total: review.totalVotes || 0,
-        comment: review.comment || "",
-        status: review.status,
-      }));
-
-      setReviews(transformedReviews);
-    } catch (err) {
-      console.error("Error fetching reviews:", err);
-      setError(err.message);
-      setReviews([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Transform reviews data
+  const reviews = useMemo(() => {
+    if (!rawReviews) return [];
+    return rawReviews.map((review) => ({
+      id: review.id,
+      name: review.reviewer?.name || review.reviewerName || "Reviewer",
+      reviewerId: review.reviewerId,
+      date: new Date(review.createdAt).toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }),
+      rating: review.rating || 0,
+      total: review.totalVotes || 0,
+      comment: review.comment || "",
+      status: review.status,
+    }));
+  }, [rawReviews]);
 
   const handleNotification = () => {
     alert(
@@ -231,7 +199,7 @@ export default function PengelolaDashboard() {
             <h3 className="font-semibold text-gray-800">Review Data</h3>
             {!loading && !error && (
               <button
-                onClick={fetchReviews}
+                onClick={() => mutate()}
                 className="text-sm text-blue-600 hover:text-blue-700"
                 title="Refresh data"
               >
@@ -277,9 +245,9 @@ export default function PengelolaDashboard() {
                     d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                <p className="text-sm text-red-600 mb-3">{error}</p>
+                <p className="text-sm text-red-600 mb-3">Gagal mengambil data review</p>
                 <button
-                  onClick={fetchReviews}
+                  onClick={() => mutate()}
                   className="text-sm bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition"
                 >
                   Coba Lagi
