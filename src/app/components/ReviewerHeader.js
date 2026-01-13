@@ -1,17 +1,17 @@
 'use client';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useLogout } from '@/hooks/useAuth';
 
 export default function Header({ title = "Reviewer" }) {
-  const router = useRouter();
+  const { logout, isLoggingOut } = useLogout();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
-  const handleLogout = () => {
-    // localStorage.removeItem('reviewerToken'); // Opsional
-    router.push('/login/loginReviewer');
+  const handleLogout = async () => {
+    closeModal();
+    await logout();
   };
 
   return (
@@ -21,9 +21,10 @@ export default function Header({ title = "Reviewer" }) {
           <h1 className="text-gray-600 text-sm">{title}</h1>
           <button
             onClick={openModal}
-            className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200"
+            disabled={isLoggingOut}
+            className="bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white px-6 py-2 rounded-lg font-medium transition duration-200 disabled:cursor-not-allowed"
           >
-            Logout
+            {isLoggingOut ? 'Logging out...' : 'Logout'}
           </button>
         </div>
       </div>
@@ -52,13 +53,11 @@ export default function Header({ title = "Reviewer" }) {
                 Batal
               </button>
               <button
-                onClick={() => {
-                  closeModal();
-                  handleLogout();
-                }}
-                className="flex-1 py-2.5 px-4 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors duration-200"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="flex-1 py-2.5 px-4 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white rounded-lg font-medium transition-colors duration-200 disabled:cursor-not-allowed"
               >
-                Ya, Logout
+                {isLoggingOut ? 'Logging out...' : 'Ya, Logout'}
               </button>
             </div>
           </div>
