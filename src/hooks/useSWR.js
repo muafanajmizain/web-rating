@@ -5,3 +5,16 @@ export { useSummary } from './useSummary';
 export { useSchools, usePublicSchools, useReviewerSchools } from './useSchools';
 export { useSchoolDetail, useSchoolDetailLocal } from './useSchoolDetail';
 export { useSchoolReviews } from './useReviews';
+export {
+  useCategories,
+  useCategoryById,
+  useIndicators,
+  useIndicatorsByCategory,
+  useIndicatorById,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  createIndicator,
+  updateIndicator,
+  deleteIndicator,
+} from './useIndicators';
