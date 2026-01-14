@@ -1,12 +1,12 @@
 // src/hooks/useReviews.js
-import useSWR from 'swr';
-import { publicFetcher } from '@/lib/swr-config';
+import { authFetcher } from "@/lib/swr-config";
+import useSWR from "swr";
 
 // Hook for fetching reviews by school ID
 export function useSchoolReviews(schoolId) {
   const { data, error, isLoading, mutate } = useSWR(
     schoolId ? `/api/reviews/school/${schoolId}` : null,
-    publicFetcher
+    authFetcher
   );
 
   return {
