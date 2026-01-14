@@ -3,14 +3,6 @@ import { NextResponse } from "next/server";
 
 export async function GET(request) {
   try {
-    // const token = request.headers.get('Authorization');
-    // if (!token) {
-    //     return NextResponse.json(
-    //         { success: false, message: 'Token tidak ditemukan' },
-    //         { status: 401 }
-    //     );
-    // }
-
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_BASE_URL_API}/api/schools`,
       {
