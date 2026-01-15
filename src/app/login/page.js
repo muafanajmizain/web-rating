@@ -2,7 +2,16 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+// Helper function to get dashboard path by role
+const getDashboardByRole = (role) => {
+  const userRole = role?.toLowerCase() || "";
+  if (userRole === "admin") return "/Admin";
+  if (userRole === "reviewer") return "/Reviewer";
+  if (["pengelola", "school", "sekolah"].includes(userRole)) return "/pengelola-sekolah";
+  return "/user";
+};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,6 +20,25 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  // Check if user is already logged in
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem("token");
+      const userStr = localStorage.getItem("user");
+
+      if (token && userStr) {
+        const user = JSON.parse(userStr);
+        const dashboard = getDashboardByRole(user?.role);
+        router.replace(dashboard);
+        return;
+      }
+    } catch (error) {
+      console.error("Auth check failed:", error);
+    }
+    setCheckingAuth(false);
+  }, [router]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -36,28 +64,26 @@ export default function LoginPage() {
       localStorage.setItem("user", JSON.stringify(data.user));
 
       // Redirect berdasarkan role user
-      const userRole = data.user?.role?.toLowerCase() || "";
-
-      if (userRole === "admin") {
-        router.push("/Admin");
-      } else if (userRole === "reviewer") {
-        router.push("/Reviewer");
-      } else if (
-        userRole === "pengelola" ||
-        userRole === "school" ||
-        userRole === "sekolah"
-      ) {
-        router.push("/pengelola-sekolah");
-      } else {
-        // Default redirect jika role tidak dikenali
-        router.push("/user");
-      }
+      const dashboard = getDashboardByRole(data.user?.role);
+      router.push(dashboard);
     } catch (err) {
       setError("Username atau Password salah!");
     } finally {
       setLoading(false);
     }
   };
+
+  // Show loading while checking auth
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">Memuat...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex">
