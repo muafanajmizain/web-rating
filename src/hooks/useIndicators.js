@@ -113,7 +113,7 @@ export async function createCategory(name) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
     },
-    body: JSON.stringify({ nama: name }),
+    body: JSON.stringify({name}),
   });
 
   const data = await response.json();
@@ -135,7 +135,7 @@ export async function updateCategory(id, name) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
     },
-    body: JSON.stringify({ nama: name }),
+    body: JSON.stringify({name}),
   });
 
   const data = await response.json();
