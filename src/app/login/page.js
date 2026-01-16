@@ -44,7 +44,7 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-
+ 
     try {
       const response = await fetch("/api/login", {
         method: "POST",
@@ -58,7 +58,7 @@ export default function LoginPage() {
         setError(data.message || "Login gagal. Silakan coba lagi.");
         return;
       }
-
+      
       // Simpan token dan user data
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));

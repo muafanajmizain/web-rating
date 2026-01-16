@@ -15,6 +15,37 @@ export default function Page() {
     avatar: "https://placehold.co/150x150/3b82f6/ffffff?text=GN"
   };
 
+  const token = localStorage.getItem("token");
+  const user = JSON.parse(localStorage.getItem("user"));
+ 
+  const getProfile = async () => {
+    try {
+      const response = await fetch('/api/profilereviewer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ user_id: user.id }),
+      }); 
+      const data = await response.json();
+
+      if (response.ok) {
+        // console.log('Profile data:', data.data[0]);
+        const profile = data.data[0];
+        const alias = profile.nama_lengkap.split(' ').map(n => n[0]).join('');
+        console.log('Alias:', alias);
+        // Update state or perform actions with the profile data
+      } else {
+        console.error('Error fetching profile:', data);
+      }
+    } catch (error) {
+      console.error('Network error:', error);
+    }
+  };
+
+  getProfile();
+
   return (
     <div className="p-8 flex-1 overflow-hidden flex flex-col">
       {/* Judul Halaman */}
