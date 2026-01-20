@@ -9,7 +9,8 @@ const getDashboardByRole = (role) => {
   const userRole = role?.toLowerCase() || "";
   if (userRole === "admin") return "/Admin";
   if (userRole === "reviewer") return "/Reviewer";
-  if (["pengelola", "school", "sekolah"].includes(userRole)) return "/pengelola-sekolah";
+  if (["pengelola", "school", "sekolah"].includes(userRole))
+    return "/pengelola-sekolah";
   return "/user";
 };
 
@@ -44,7 +45,7 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
- 
+
     try {
       const response = await fetch("/api/login", {
         method: "POST",
@@ -58,7 +59,7 @@ export default function LoginPage() {
         setError(data.message || "Login gagal. Silakan coba lagi.");
         return;
       }
-      
+
       // Simpan token dan user data
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));

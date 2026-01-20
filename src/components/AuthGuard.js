@@ -49,7 +49,7 @@ export default function AuthGuard({ children, allowedRoles = [] }) {
         // Check if user has allowed role for this route
         if (allowedRoles.length > 0) {
           const hasAllowedRole = allowedRoles.some(
-            (role) => role.toLowerCase() === userRole
+            (role) => role.toLowerCase() === userRole,
           );
 
           if (!hasAllowedRole) {
