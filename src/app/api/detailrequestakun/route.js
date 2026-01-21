@@ -7,7 +7,7 @@ export async function POST(request) {
     if (!authHeader) {
       return NextResponse.json(
         { success: false, message: "Authorization header required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -17,11 +17,9 @@ export async function POST(request) {
     if (!id) {
       return NextResponse.json(
         { success: false, message: "ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
-
-    console.log("ID yang diterima:", id);
 
     const response = await axios.get(
       `${process.env.NEXT_PUBLIC_BASE_URL_API}/api/requests/${id}/`,
@@ -30,12 +28,10 @@ export async function POST(request) {
           "Content-Type": "application/json",
           Authorization: authHeader,
         },
-      }
+      },
     );
 
     const data = response.data;
-
-    console.log("Data dari backend:", data);
 
     // Kembalikan sesuai format yang diharapkan frontend
     return NextResponse.json({
@@ -48,13 +44,13 @@ export async function POST(request) {
     if (axios.isAxiosError(error) && error.response) {
       return NextResponse.json(
         error.response.data || { message: "Error from backend" },
-        { status: error.response.status || 500 }
+        { status: error.response.status || 500 },
       );
     }
 
     return NextResponse.json(
       { success: false, message: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
