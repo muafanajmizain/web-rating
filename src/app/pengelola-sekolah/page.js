@@ -4,11 +4,13 @@
 import { useSchoolReviews } from "@/hooks/useSWR";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import DashboardLayout from "./DashboardLayout";
 
 export default function PengelolaDashboard() {
   const [notificationCount] = useState(3);
   const [schoolId, setSchoolId] = useState(null);
+  const router = useRouter();
 
   // Get schoolId from localStorage user object
   useEffect(() => {
@@ -52,9 +54,7 @@ export default function PengelolaDashboard() {
   }, [rawReviews]);
 
   const handleNotification = () => {
-    alert(
-      "Anda memiliki 3 notifikasi baru!\n\n1. Review baru dari Reviewer A\n2. Komentar pada artikel\n3. Update ranking sekolah"
-    );
+    router.push("/pengelola-sekolah/riwayat");
   };
 
   const calculateAverageRating = () => {
