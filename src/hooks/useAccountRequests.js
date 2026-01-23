@@ -1,0 +1,77 @@
+// src/hooks/useAccountRequests.js
+import useSWR from "swr";
+import { authFetcher } from "@/lib/swr-config";
+
+// Hook for fetching all account requests
+export function useAccountRequests() {
+  const { data, error, isLoading, mutate } = useSWR(
+    "/api/requests",
+    authFetcher
+  );
+
+  return {
+    requests: data?.data || [],
+    isLoading,
+    isError: error,
+    mutate,
+  };
+}
+
+// Hook for fetching a single account request by ID
+export function useAccountRequestDetail(id) {
+  const { data, error, isLoading, mutate } = useSWR(
+    id ? `/api/requests/${id}` : null,
+    authFetcher
+  );
+
+  return {
+    request: data?.data,
+    isLoading,
+    isError: error,
+    mutate,
+  };
+}
+
+// Function to accept a request
+export async function acceptRequest(id) {
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+  const response = await fetch(`/api/requests/${id}/accept`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.message || "Gagal menerima permintaan");
+  }
+
+  return data;
+}
+
+// Function to reject a request
+export async function rejectRequest(id) {
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+  const response = await fetch(`/api/requests/${id}/reject`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.message || "Gagal menolak permintaan");
+  }
+
+  return data;
+}

@@ -1,8 +1,15 @@
+// src/app/Admin/request-akun/detail/[id]/page.js
 "use client";
 
 import DashboardLayout from "@/app/Admin/DashboardLayout";
+import ConfirmModal from "@/components/ConfirmModal";
+import {
+  useAccountRequestDetail,
+  acceptRequest,
+  rejectRequest,
+} from "@/hooks/useAccountRequests";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export default function DetailRequestAkun() {
   const router = useRouter();
@@ -10,111 +17,93 @@ export default function DetailRequestAkun() {
   const searchParams = useSearchParams();
 
   const id = params?.id || null;
-  const role = searchParams?.get("role") || "pengelola"; // fallback ke pengelola
+  const role = searchParams?.get("role") || "pengelola";
 
-  const [detailData, setDetailData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [currentStatus, setCurrentStatus] = useState(null);
+  const { request, isLoading, isError, mutate } = useAccountRequestDetail(id);
   const [actionLoading, setActionLoading] = useState(false);
 
-  useEffect(() => {
-    if (!id) {
-      setError("ID tidak ditemukan");
-      setLoading(false);
-      return;
-    }
+  // Modal states
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    confirmText: "",
+    confirmVariant: "primary",
+    action: null,
+  });
 
-    const fetchDetail = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  // Success/Error message states
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
-        const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("Token tidak ditemukan. Silakan login kembali.");
-        }
-
-        const res = await fetch("/api/detailrequestakun", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ id }),
-        });
-
-        const result = await res.json();
-
-        if (!res.ok || !result.success) {
-          throw new Error(result.message || "Gagal mengambil data detail");
-        }
-
-        setDetailData(result.data);
-        setCurrentStatus(result.data?.status || "pending");
-      } catch (err) {
-        console.error("Error fetching detail:", err);
-        setError(err.message || "Terjadi kesalahan saat mengambil data");
-      } finally {
-        setLoading(false);
-      }
+  const openModal = (actionType, actionName, variant) => {
+    const messages = {
+      accept: {
+        title: "Terima Permintaan",
+        message: "Apakah Anda yakin ingin menerima permintaan akun ini?",
+        confirmText: "Ya, Terima",
+      },
+      reject: {
+        title: "Tolak Permintaan",
+        message: "Apakah Anda yakin ingin menolak permintaan akun ini?",
+        confirmText: "Ya, Tolak",
+      },
     };
 
-    fetchDetail();
-  }, [id]);
+    setModalConfig({
+      isOpen: true,
+      title: messages[actionType].title,
+      message: messages[actionType].message,
+      confirmText: messages[actionType].confirmText,
+      confirmVariant: variant,
+      action: { actionType, actionName },
+    });
+  };
 
-  const handleUpdateStatus = async (newStatus, actionName) => {
-    if (!confirm(`Yakin ingin ${actionName} permintaan ini?`)) return;
+  const closeModal = () => {
+    setModalConfig((prev) => ({ ...prev, isOpen: false }));
+  };
+
+  const handleConfirmAction = async () => {
+    if (!modalConfig.action) return;
+
+    const { actionType, actionName } = modalConfig.action;
 
     try {
       setActionLoading(true);
-      const token = localStorage.getItem("token");
+      setErrorMessage("");
 
-      if (!token) {
-        throw new Error("Token tidak ditemukan. Silakan login kembali.");
+      if (actionType === "accept") {
+        await acceptRequest(id);
+      } else if (actionType === "reject") {
+        await rejectRequest(id);
       }
 
-      const res = await fetch("/api/updaterequestakun", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          id,
-          status: newStatus,
-        }),
-      });
+      setSuccessMessage(`Permintaan berhasil ${actionName}!`);
+      closeModal();
 
-      const result = await res.json();
-
-      console.log("resultnya: ", result);
-      
-
-      if (!res.ok || !result.success) {
-        throw new Error(result.message || `Gagal ${actionName} permintaan`);
-      }
-
-      setCurrentStatus(newStatus);
-      alert(`Permintaan berhasil ${actionName}!`);
-
-      // Refresh data setelah update
-      window.location.reload();
+      // Refresh data
+      mutate();
     } catch (err) {
       console.error(`Error ${actionName}:`, err);
-      alert(err.message || `Terjadi kesalahan saat ${actionName} permintaan`);
+      setErrorMessage(err.message || `Terjadi kesalahan saat ${actionName} permintaan`);
+      closeModal();
     } finally {
       setActionLoading(false);
     }
   };
 
-  const handleAccept = () => handleUpdateStatus("accepted", "menerima");
-  const handleReject = () => handleUpdateStatus("rejected", "menolak");
-  const handleNonAktif = () => handleUpdateStatus("inactive", "menonaktifkan");
+  const handleAccept = () => openModal("accept", "diterima", "success");
+  const handleReject = () => openModal("reject", "ditolak", "danger");
 
   const isReviewer = role === "reviewer";
 
-  if (loading) {
+  // Get detail data - handle nested structure
+  const detailData = request?.data || request;
+  const currentStatus = detailData?.status || "pending";
+
+  // Loading state
+  if (isLoading) {
     return (
       <DashboardLayout title="Detail Request Akun">
         <div className="flex justify-center items-center h-64">
@@ -127,20 +116,44 @@ export default function DetailRequestAkun() {
     );
   }
 
-  if (error || !detailData) {
+  // Error state
+  if (isError || !detailData) {
     return (
       <DashboardLayout title="Detail Request Akun">
         <div className="text-center py-12">
+          <svg
+            className="w-16 h-16 text-red-400 mx-auto mb-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
           <h3 className="text-2xl text-red-600 font-semibold mb-4">
             Terjadi Kesalahan
           </h3>
-          <p className="text-red-600 mb-6">{error || "Data tidak ditemukan"}</p>
-          <button
-            onClick={() => router.back()}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Kembali
-          </button>
+          <p className="text-gray-600 mb-6">
+            {isError?.message || "Data tidak ditemukan"}
+          </p>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={() => mutate()}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Coba Lagi
+            </button>
+            <button
+              onClick={() => router.back()}
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              Kembali
+            </button>
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -176,7 +189,7 @@ export default function DetailRequestAkun() {
   return (
     <DashboardLayout title="Detail Request Akun">
       <div className="max-w-2xl mx-auto">
-        {/* Tombol Kembali */}
+        {/* Back Button */}
         <button
           onClick={() => router.back()}
           className="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
@@ -197,6 +210,74 @@ export default function DetailRequestAkun() {
           <span className="font-medium">Kembali</span>
         </button>
 
+        {/* Success Message */}
+        {successMessage && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              {successMessage}
+            </div>
+            <button
+              onClick={() => setSuccessMessage("")}
+              className="text-green-700 hover:text-green-900"
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+          </div>
+        )}
+
+        {/* Error Message */}
+        {errorMessage && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              {errorMessage}
+            </div>
+            <button
+              onClick={() => setErrorMessage("")}
+              className="text-red-700 hover:text-red-900"
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+          </div>
+        )}
+
         <div className="bg-white rounded-lg shadow-md border border-gray-200 p-8">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-800">
@@ -211,7 +292,7 @@ export default function DetailRequestAkun() {
                 Nama Lengkap
               </label>
               <p className="text-gray-900 font-medium">
-                {detailData.data.nama_lengkap || "-"}
+                {detailData.nama_lengkap || "-"}
               </p>
             </div>
 
@@ -219,16 +300,14 @@ export default function DetailRequestAkun() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Email
               </label>
-              <p className="text-gray-900">{detailData.data.email || "-"}</p>
+              <p className="text-gray-900">{detailData.email || "-"}</p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 No WhatsApp
               </label>
-              <p className="text-gray-900">
-                {detailData.data.no_whatsapp || "-"}
-              </p>
+              <p className="text-gray-900">{detailData.no_whatsapp || "-"}</p>
             </div>
 
             {isReviewer ? (
@@ -238,7 +317,7 @@ export default function DetailRequestAkun() {
                     Pendidikan Terakhir
                   </label>
                   <p className="text-gray-900">
-                    {detailData.data.pendidikan_terakhir || "-"}
+                    {detailData.pendidikan_terakhir || "-"}
                   </p>
                 </div>
 
@@ -246,18 +325,16 @@ export default function DetailRequestAkun() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Profesi
                   </label>
-                  <p className="text-gray-900">
-                    {detailData.data.profesi || "-"}
-                  </p>
+                  <p className="text-gray-900">{detailData.profesi || "-"}</p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     CV
                   </label>
-                  {detailData.data.upload_cv ? (
+                  {detailData.upload_cv ? (
                     <a
-                      href={detailData.data.upload_cv}
+                      href={detailData.upload_cv}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:underline inline-flex items-center gap-1"
@@ -288,18 +365,16 @@ export default function DetailRequestAkun() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Jabatan
                   </label>
-                  <p className="text-gray-900">
-                    {detailData.data.jabatan || "-"}
-                  </p>
+                  <p className="text-gray-900">{detailData.jabatan || "-"}</p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Surat Kuasa
                   </label>
-                  {detailData.data.upload_surat_kuasa ? (
+                  {detailData.upload_surat_kuasa ? (
                     <a
-                      href={detailData.data.upload_surat_kuasa}
+                      href={detailData.upload_surat_kuasa}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:underline inline-flex items-center gap-1"
@@ -327,7 +402,7 @@ export default function DetailRequestAkun() {
             )}
           </div>
 
-          {/* Action Buttons - Hanya tampil jika status pending */}
+          {/* Action Buttons - Only show if status is pending */}
           {currentStatus === "pending" && (
             <div className="flex gap-4 mt-10 pt-6 border-t border-gray-200">
               <button
@@ -335,26 +410,19 @@ export default function DetailRequestAkun() {
                 disabled={actionLoading}
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {actionLoading ? "Memproses..." : "Terima"}
+                Terima
               </button>
               <button
                 onClick={handleReject}
                 disabled={actionLoading}
                 className="flex-1 bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {actionLoading ? "Memproses..." : "Tolak"}
-              </button>
-              <button
-                onClick={handleNonAktif}
-                disabled={actionLoading}
-                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-6 py-2.5 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {actionLoading ? "Memproses..." : "Nonaktifkan"}
+                Tolak
               </button>
             </div>
           )}
 
-          {/* Info jika sudah diproses */}
+          {/* Info if already processed */}
           {currentStatus !== "pending" && (
             <div className="mt-10 pt-6 border-t border-gray-200">
               <p className="text-center text-gray-600">
@@ -367,6 +435,18 @@ export default function DetailRequestAkun() {
           )}
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmModal
+        isOpen={modalConfig.isOpen}
+        onClose={closeModal}
+        onConfirm={handleConfirmAction}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        confirmText={modalConfig.confirmText}
+        confirmVariant={modalConfig.confirmVariant}
+        isLoading={actionLoading}
+      />
     </DashboardLayout>
   );
 }
