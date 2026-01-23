@@ -3,12 +3,10 @@ import { NextResponse } from "next/server";
 
 export async function POST(request) {
   try {
-    const { user_id } = await request.json();
     const authHeader = request.headers.get("authorization");
 
     const response = await axios.get(
-      `${process.env.NEXT_PUBLIC_BASE_URL_API}/api/reviewer/profile/${user_id}`, //user_id dikirim untuk parameter pengambilan profile
-      {
+      `${process.env.NEXT_PUBLIC_BASE_URL_API}/api/reviews/dashboard/profile`,{
         headers: {
             "Content-Type": "application/json",
             "Authorization": authHeader

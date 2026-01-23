@@ -2,9 +2,41 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function ReviewerPage() {
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    getStats();
+  }, []);
+
+  const getStats = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch('/api/reviewers/stats', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setStats(data.data);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+
+  useEffect(() => {
+    getStats();
+  }, []);
+
+
   const [schoolsData] = useState([
     { rank: 1, name: "SMA N 1 Purwokerto", score: "3.528" },
     { rank: 2, name: "SMA IT Al-Irsyad", score: "3.301" },
@@ -33,11 +65,11 @@ export default function ReviewerPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
         <div className="bg-blue-500 text-white rounded-lg p-6">
           <p className="text-sm">Sekolah Sudah Direview</p>
-          <p className="text-3xl font-bold">300</p>
+          <p className="text-3xl font-bold">{stats?.sudah_review || 0}</p>
         </div>
         <div className="bg-emerald-500 text-white rounded-lg p-6">
           <p className="text-sm">Sekolah Belum Direview</p>
-          <p className="text-3xl font-bold">300</p>
+          <p className="text-3xl font-bold">{stats?.belum_review || 0}</p>
         </div>
       </div>
 

@@ -2,22 +2,29 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
 import Link from 'next/link';
 
 export default function Page() {
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    getProfile();
+  }, []);
+
   // Mock data profil reviewer
-  const profile = {
-    id: 1,
-    name: "Guz Nazmi Zain Al-mu'afa",
-    email: "guznazmi@example.com",
-    whatsapp: "089101112131415",
-    avatar: "https://placehold.co/150x150/3b82f6/ffffff?text=GN"
-  };
+  // const profile = {
+  //   id: 1,
+  //   name: "Guz Nazmi Zain Al-mu'afa",
+  //   email: "guznazmi@example.com",
+  //   whatsapp: "089101112131415",
+  //   avatar: "https://placehold.co/150x150/3b82f6/ffffff?text=GN"
+  // };
 
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user"));
- 
+
   const getProfile = async () => {
     try {
       const response = await fetch('/api/profilereviewer', {
@@ -26,25 +33,41 @@ export default function Page() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ user_id: user.id }),
-      }); 
+      });
+
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+        return;
+      }
+
       const data = await response.json();
 
       if (response.ok) {
-        // console.log('Profile data:', data.data[0]);
-        const profile = data.data[0];
-        const alias = profile.nama_lengkap.split(' ').map(n => n[0]).join('');
-        console.log('Alias:', alias);
-        // Update state or perform actions with the profile data
-      } else {
-        console.error('Error fetching profile:', data);
+        const profileuser = data.data;
+        const alias = profileuser.nama_lengkap
+          .split(' ')
+          .map(n => n[0])
+          .join('');
+
+        setProfile({
+          id: profileuser.id,
+          name: profileuser.nama_lengkap,
+          email: profileuser.email,
+          whatsapp: profileuser.no_whatsapp,
+          avatar: `https://placehold.co/150x150/3b82f6/ffffff?text=${alias}`
+        });
       }
     } catch (error) {
-      console.error('Network error:', error);
+      console.error(error);
     }
   };
 
-  getProfile();
+  if (!profile) {
+    return <div className="p-8">Loading...</div>;
+  }
+
+
 
   return (
     <div className="p-8 flex-1 overflow-hidden flex flex-col">

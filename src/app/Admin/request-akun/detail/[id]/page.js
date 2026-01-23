@@ -88,6 +88,9 @@ export default function DetailRequestAkun() {
 
       const result = await res.json();
 
+      console.log("resultnya: ", result);
+      
+
       if (!res.ok || !result.success) {
         throw new Error(result.message || `Gagal ${actionName} permintaan`);
       }
