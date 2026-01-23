@@ -18,7 +18,7 @@ export default function UserFooter() {
                 height={40}
                 className="w-10 h-10"
               />
-              <span className="text-2xl font-bold">WebRanking</span>
+              <span className="text-2xl font-bold">OnTheWeb</span>
             </div>
             <p className="text-sm text-gray-300 leading-relaxed">
               Mewujudkan sistem rating sekolah yang objektif dan transparan, membantu masyarakat menemukan sekolah terbaik untuk masa depan yang unggul.
@@ -80,7 +80,7 @@ export default function UserFooter() {
                   <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                   <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                 </svg>
-                <span className="text-sm text-gray-300">info@schoolrank.sch.id</span>
+                <span className="text-sm text-gray-300">OnTheWeb.sch.id</span>
               </div>
 
               {/* Social Media Icons */}
@@ -107,7 +107,7 @@ export default function UserFooter() {
 
         {/* Copyright */}
         <div className="border-t border-blue-800 mt-8 pt-6 text-center">
-          <p className="text-sm text-gray-300">© 2025 WebRanking. All Rights Reserved.</p>
+          <p className="text-sm text-gray-300">© 2025 OnTheWeb. All Rights Reserved.</p>
         </div>
       </div>
     </footer>
