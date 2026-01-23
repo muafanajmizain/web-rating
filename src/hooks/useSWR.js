@@ -18,3 +18,8 @@ export {
   updateIndicator,
   deleteIndicator,
 } from './useIndicators';
+export {
+  useNotifications,
+  useNotificationDetail,
+  markNotificationAsRead,
+} from './useNotifications';
