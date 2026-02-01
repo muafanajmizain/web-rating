@@ -1,67 +1,37 @@
 // src/app/pengelola-sekolah/page.js
 
 "use client";
-import { useSchoolReviews } from "@/hooks/useSWR";
+import { useDashboardSummary } from "@/hooks/useSWR";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "./DashboardLayout";
 
 export default function PengelolaDashboard() {
   const [notificationCount] = useState(3);
-  const [schoolId, setSchoolId] = useState(null);
   const router = useRouter();
 
-  // Get schoolId from localStorage user object
-  useEffect(() => {
-    try {
-      const userStr = localStorage.getItem("user");
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        if (user?.school_id) {
-          setSchoolId(user.school_id);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to get school_id from localStorage:", error);
-    }
-  }, []);
-
   const {
-    reviews: rawReviews,
+    summary,
     isLoading: loading,
     isError: error,
     mutate,
-  } = useSchoolReviews(schoolId);
-
-  // Transform reviews data
-  const reviews = useMemo(() => {
-    if (!rawReviews) return [];
-    return rawReviews.map((review) => ({
-      id: review.id,
-      name: review.reviewer?.name || review.reviewerName || "Reviewer",
-      reviewerId: review.reviewerId,
-      date: new Date(review.createdAt).toLocaleDateString("id-ID", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      }),
-      rating: review.rating || 0,
-      total: review.totalVotes || 0,
-      comment: review.comment || "",
-      status: review.status,
-    }));
-  }, [rawReviews]);
+  } = useDashboardSummary();
 
   const handleNotification = () => {
     router.push("/pengelola-sekolah/riwayat");
   };
 
-  const calculateAverageRating = () => {
-    if (reviews.length === 0) return 0;
-    const total = reviews.reduce((sum, review) => sum + review.rating, 0);
-    return (total / reviews.length).toFixed(1);
-  };
+  // Get data from summary
+  const averageScore = summary?.rating?.average_score || 0;
+  const reviewCount = summary?.rating?.review_count || 0;
+  const rankingKecamatan = summary?.ranking_kecamatan || "-";
+  const rankingKabupaten = summary?.ranking_kabupaten || "-";
+  const reviewerCount = summary?.reviewer_count || 0;
+  const reviews = summary?.reviews || [];
+
+  // Check if error is "school not found"
+  const isSchoolNotFound = error?.message?.toLowerCase().includes("school not found");
 
   const renderStars = (rating) => {
     const stars = [];
@@ -142,22 +112,72 @@ export default function PengelolaDashboard() {
         </button>
       </div>
 
+      {/* No School Warning Banner */}
+      {isSchoolNotFound && (
+        <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <svg
+              className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-yellow-800 mb-1">
+                Sekolah Belum Diklaim
+              </h3>
+              <p className="text-sm text-yellow-700 mb-3">
+                Akun Anda belum terhubung dengan sekolah. Silakan klaim sekolah Anda terlebih dahulu untuk mengakses dashboard.
+              </p>
+              <Link
+                href="/pengelola-sekolah/profile"
+                className="inline-flex items-center gap-2 text-sm bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-medium transition"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
+                Klaim Sekolah di Profile
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Rating Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         {/* Card 1 - Rating */}
         <div className="bg-white rounded-lg shadow-md p-6 text-center border border-gray-200">
           <h3 className="text-sm font-semibold text-gray-700 mb-3">Rating</h3>
-          {schoolId ? (
+          {loading ? (
+            <p className="text-sm text-gray-400">Memuat...</p>
+          ) : error || !summary ? (
+            <p className="text-sm text-gray-400">-</p>
+          ) : (
             <>
               <div className="flex justify-center gap-1 mb-2">
-                {renderStars(parseFloat(calculateAverageRating()))}
+                {renderStars(averageScore)}
               </div>
               <p className="text-xs text-gray-500">
-                {calculateAverageRating()} dari {reviews.length} review
+                {averageScore.toFixed(1)} dari {reviewCount} review
               </p>
             </>
-          ) : (
-            <p className="text-sm text-gray-400">Data tidak tersedia</p>
           )}
         </div>
 
@@ -166,10 +186,12 @@ export default function PengelolaDashboard() {
           <h3 className="text-sm font-semibold text-gray-700 mb-3">
             Ranking Kecamatan
           </h3>
-          {schoolId ? (
-            <p className="text-3xl font-bold text-gray-800">1</p>
+          {loading ? (
+            <p className="text-sm text-gray-400">Memuat...</p>
+          ) : error || !summary ? (
+            <p className="text-3xl font-bold text-gray-400">-</p>
           ) : (
-            <p className="text-sm text-gray-400">Data tidak tersedia</p>
+            <p className="text-3xl font-bold text-gray-800">{rankingKecamatan}</p>
           )}
         </div>
 
@@ -178,23 +200,24 @@ export default function PengelolaDashboard() {
           <h3 className="text-sm font-semibold text-gray-700 mb-3">
             Ranking Kabupaten
           </h3>
-          {schoolId ? (
-            <>
-              <p className="text-3xl font-bold text-gray-800">25</p>
-              <p className="text-xs text-gray-500 mt-1">dari 100</p>
-            </>
+          {loading ? (
+            <p className="text-sm text-gray-400">Memuat...</p>
+          ) : error || !summary ? (
+            <p className="text-3xl font-bold text-gray-400">-</p>
           ) : (
-            <p className="text-sm text-gray-400">Data tidak tersedia</p>
+            <p className="text-3xl font-bold text-gray-800">{rankingKabupaten}</p>
           )}
         </div>
 
         {/* Card 4 - Reviewer */}
         <div className="bg-white rounded-lg shadow-md p-6 text-center border border-gray-200">
           <h3 className="text-sm font-semibold text-gray-700 mb-3">Reviewer</h3>
-          {schoolId ? (
-            <p className="text-3xl font-bold text-gray-800">{reviews.length}/5</p>
+          {loading ? (
+            <p className="text-sm text-gray-400">Memuat...</p>
+          ) : error || !summary ? (
+            <p className="text-3xl font-bold text-gray-400">-</p>
           ) : (
-            <p className="text-sm text-gray-400">Data tidak tersedia</p>
+            <p className="text-3xl font-bold text-gray-800">{reviewerCount}</p>
           )}
         </div>
       </div>
@@ -258,30 +281,8 @@ export default function PengelolaDashboard() {
             )}
           </div>
 
-          {/* No School ID State */}
-          {!schoolId && (
-            <div className="p-8 text-center">
-              <svg
-                className="w-12 h-12 mx-auto mb-3 text-gray-300"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
-              </svg>
-              <p className="text-sm text-gray-500">
-                Data sekolah tidak tersedia. Pastikan Anda sudah login dengan akun yang terhubung ke sekolah.
-              </p>
-            </div>
-          )}
-
           {/* Loading State */}
-          {schoolId && loading && (
+          {loading && (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
               <p className="text-sm text-gray-500">Memuat data review...</p>
@@ -289,37 +290,64 @@ export default function PengelolaDashboard() {
           )}
 
           {/* Error State */}
-          {schoolId && error && (
+          {error && (
             <div className="p-8 text-center">
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <svg
-                  className="w-10 h-10 text-red-400 mx-auto mb-3"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <p className="text-sm text-red-600 mb-3">
-                  Gagal mengambil data review
-                </p>
-                <button
-                  onClick={() => mutate()}
-                  className="text-sm bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition"
-                >
-                  Coba Lagi
-                </button>
-              </div>
+              {isSchoolNotFound ? (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <svg
+                    className="w-12 h-12 text-yellow-400 mx-auto mb-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                    />
+                  </svg>
+                  <p className="text-sm text-yellow-700 mb-3">
+                    Belum ada review karena sekolah belum diklaim.
+                  </p>
+                  <Link
+                    href="/pengelola-sekolah/profile"
+                    className="inline-block text-sm bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-medium transition"
+                  >
+                    Klaim Sekolah
+                  </Link>
+                </div>
+              ) : (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <svg
+                    className="w-10 h-10 text-red-400 mx-auto mb-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <p className="text-sm text-red-600 mb-3">
+                    {error?.message || "Gagal mengambil data review"}
+                  </p>
+                  <button
+                    onClick={() => mutate()}
+                    className="text-sm bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition"
+                  >
+                    Coba Lagi
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
           {/* Review List */}
-          {schoolId && !loading && !error && (
+          {!loading && !error && (
             <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
               {reviews.length === 0 ? (
                 <div className="p-8 text-center text-gray-500">
@@ -361,9 +389,15 @@ export default function PengelolaDashboard() {
 
                       <div className="flex-1">
                         <h4 className="font-semibold text-gray-800 text-sm">
-                          {review.name}
+                          {review.reviewer_name || "Reviewer"}
                         </h4>
-                        <p className="text-xs text-gray-500">{review.date}</p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(review.created_at).toLocaleDateString("id-ID", {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          })}
+                        </p>
                         <div className="flex items-center gap-2 mt-1">
                           <div className="flex items-center gap-1">
                             <svg
@@ -374,18 +408,13 @@ export default function PengelolaDashboard() {
                               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                             </svg>
                             <span className="text-sm font-semibold text-gray-700">
-                              {review.rating.toFixed(1)}
+                              {review.total_score.toFixed(1)}
                             </span>
                             <span className="text-xs text-gray-500">
-                              ({review.total})
+                              ({review.items_count} item{review.items_count !== 1 ? 's' : ''})
                             </span>
                           </div>
                         </div>
-                        {review.comment && (
-                          <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                            {review.comment}
-                          </p>
-                        )}
                         <Link
                           href={`/pengelola-sekolah/review-tanggapan?reviewId=${review.id}`}
                           className="text-blue-600 hover:text-blue-700 text-xs font-medium mt-1 inline-block"
