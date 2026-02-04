@@ -33,3 +33,33 @@ export function useSchoolDetailLocal(id) {
     mutate,
   };
 }
+
+// Function to update school data by manager (pengelola)
+export async function updateSchoolByManager(schoolId, data) {
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+  const response = await fetch(`/api/schools/${schoolId}/update-manager`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  const result = await response.json();
+
+  // Check for success - backend may return either {success: true} or {status: "success"}
+  const isSuccess = result.success === true || result.status === "success";
+
+  if (!response.ok || !isSuccess) {
+    const errorMessage =
+      typeof result.message === "string"
+        ? result.message
+        : "Gagal memperbarui data sekolah";
+    throw new Error(errorMessage);
+  }
+
+  return result;
+}

@@ -1,15 +1,31 @@
 // src/app/pengelola-sekolah/page.js
 
 "use client";
-import { useDashboardSummary } from "@/hooks/useSWR";
+import { useDashboardSummary, useSchoolDetailLocal } from "@/hooks/useSWR";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "./DashboardLayout";
 
 export default function PengelolaDashboard() {
   const [notificationCount] = useState(3);
+  const [schoolId, setSchoolId] = useState(null);
   const router = useRouter();
+
+  // Get school_id from localStorage
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const userData = JSON.parse(userStr);
+        if (userData?.school_id) {
+          setSchoolId(userData.school_id);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to get school_id from localStorage:", err);
+    }
+  }, []);
 
   const {
     summary,
@@ -17,6 +33,13 @@ export default function PengelolaDashboard() {
     isError: error,
     mutate,
   } = useDashboardSummary();
+
+  // Fetch school details
+  const {
+    school,
+    isLoading: schoolLoading,
+    isError: schoolError,
+  } = useSchoolDetailLocal(schoolId);
 
   const handleNotification = () => {
     router.push("/pengelola-sekolah/riwayat");
@@ -224,34 +247,143 @@ export default function PengelolaDashboard() {
 
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Side - Website Preview */}
+        {/* Left Side - School Info Card */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
-          <div className="relative h-80">
-            <div className="absolute top-0 left-0 right-0 bg-white/90 backdrop-blur-sm p-3 flex items-center justify-between border-b">
-              <div className="flex items-center gap-2">
-                <div className="flex gap-1">
-                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                </div>
-                <span className="text-xs text-gray-600">
-                  www.sman1purwokerto.sch.id
-                </span>
+          {schoolLoading ? (
+            <div className="h-80 flex items-center justify-center">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3"></div>
+                <p className="text-sm text-gray-500">Memuat data sekolah...</p>
               </div>
             </div>
-
-            <div className="w-full h-full bg-gradient-to-br from-green-700 to-green-900 flex items-center justify-center">
-              <div className="text-center text-white px-8">
-                <h1 className="text-4xl font-bold mb-2">
-                  SMA NEGERI 1 PURWOKERTO
-                </h1>
-                <p className="text-sm opacity-90">
-                  Jl. Jend. Sudirman No.1, Purwokerto
+          ) : !school || schoolError || isSchoolNotFound ? (
+            <div className="h-80 flex items-center justify-center bg-gray-50">
+              <div className="text-center px-6">
+                <svg
+                  className="w-16 h-16 text-gray-300 mx-auto mb-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                  />
+                </svg>
+                <h3 className="text-gray-600 font-medium mb-2">Belum Ada Sekolah</h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  Klaim sekolah Anda untuk melihat informasi di sini
                 </p>
-                <p className="text-sm opacity-90">www.sman1purwokerto.sch.id</p>
+                <Link
+                  href="/user/all-rankings"
+                  className="inline-flex items-center gap-2 text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition"
+                >
+                  Klaim Sekolah
+                </Link>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="relative h-80">
+              {/* Browser Header */}
+              <div className="absolute top-0 left-0 right-0 bg-white/90 backdrop-blur-sm p-3 flex items-center justify-between border-b z-10">
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1">
+                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  </div>
+                  <span className="text-xs text-gray-600 truncate max-w-[200px]">
+                    {school.website || "belum ada website"}
+                  </span>
+                </div>
+                {school.is_claimed && (
+                  <span className="flex items-center gap-1 text-xs text-green-600">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    Terverifikasi
+                  </span>
+                )}
+              </div>
+
+              {/* School Preview Content */}
+              {school.foto ? (
+                <div className="w-full h-full relative">
+                  <img
+                    src={school.foto}
+                    alt={school.nama}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end">
+                    <div className="p-6 text-white">
+                      <h1 className="text-2xl font-bold mb-1">{school.nama}</h1>
+                      {school.alamat && (
+                        <p className="text-sm opacity-90 mb-1">{school.alamat}</p>
+                      )}
+                      {school.website && (
+                        <a
+                          href={school.website.startsWith("http") ? school.website : `https://${school.website}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-300 hover:text-blue-200"
+                        >
+                          {school.website}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center pt-12">
+                  <div className="text-center text-white px-6">
+                    <h1 className="text-2xl md:text-3xl font-bold mb-2">{school.nama}</h1>
+                    {school.alamat && (
+                      <p className="text-sm opacity-90 mb-1">{school.alamat}</p>
+                    )}
+                    {school.website && (
+                      <a
+                        href={school.website.startsWith("http") ? school.website : `https://${school.website}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-200 hover:text-white"
+                      >
+                        {school.website}
+                      </a>
+                    )}
+                    {school.jenjang && (
+                      <p className="mt-3">
+                        <span className="inline-block bg-white/20 px-3 py-1 rounded-full text-xs">
+                          {school.jenjang}
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Edit Button */}
+              <Link
+                href="/pengelola-sekolah/data-sekolah"
+                className="absolute bottom-4 right-4 bg-white/90 hover:bg-white text-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium shadow-md flex items-center gap-1 transition z-10"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                  />
+                </svg>
+                Edit
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Right Side - Review List */}

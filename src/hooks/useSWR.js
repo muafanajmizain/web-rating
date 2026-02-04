@@ -3,7 +3,7 @@
 
 export { useSummary } from './useSummary';
 export { useSchools, usePublicSchools, useReviewerSchools } from './useSchools';
-export { useSchoolDetail, useSchoolDetailLocal } from './useSchoolDetail';
+export { useSchoolDetail, useSchoolDetailLocal, updateSchoolByManager } from './useSchoolDetail';
 export { useSchoolReviews } from './useReviews';
 export {
   useCategories,
@@ -30,3 +30,4 @@ export {
   rejectRequest,
 } from './useAccountRequests';
 export { useDashboardSummary } from './useDashboardSummary';
+export { useUpload, uploadFileAsync } from './useUpload';
