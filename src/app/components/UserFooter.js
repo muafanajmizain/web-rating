@@ -54,6 +54,11 @@ export default function UserFooter() {
                   Daftar Reviewer
                 </Link>
               </li>
+              <li>
+                <Link href="/register/pengelola" className="text-gray-300 hover:text-white transition">
+                  Daftar Pengelola
+                </Link>
+              </li>
             </ul>
           </div>
 
