@@ -45,9 +45,16 @@ export default function UserHeader() {
             </Link>
             <Link
               href="/user/contact"
-              className="bg-blue-600 text-white px-6 py-2 rounded-md font-medium hover:bg-blue-700 transition shadow-sm"
+              className="text-gray-700 font-medium hover:text-blue-600 transition"
             >
               Contact
+            </Link>
+            <Link
+              href="/login"
+              className="block mx-4 mt-2 px-4 py-3 text-center bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Login
             </Link>
           </nav>
 
