@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL_API;
 
 // PUT - Update school by manager (pengelola only)
+// Supports both JSON and FormData (for file uploads)
 export async function PUT(request, { params }) {
   try {
     const token = request.headers.get("Authorization");
@@ -16,19 +17,33 @@ export async function PUT(request, { params }) {
     }
 
     const { id } = await params;
-    const body = await request.json();
+    const contentType = request.headers.get("content-type") || "";
+
+    let body;
+    const headers = {
+      Authorization: token,
+    };
+
+    if (contentType.includes("multipart/form-data")) {
+      // Handle FormData for file uploads
+      const formData = await request.formData();
+      body = formData;
+      // Don't set Content-Type for FormData - let fetch set it with boundary
+    } else {
+      // Handle JSON
+      const jsonBody = await request.json();
+      headers["Content-Type"] = "application/json";
+      body = JSON.stringify(jsonBody);
+    }
 
     const res = await fetch(`${BASE_URL}/api/schools/${id}/update-manager`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token,
-      },
-      body: JSON.stringify(body),
+      headers,
+      body,
     });
 
-    const contentType = res.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
+    const resContentType = res.headers.get("content-type");
+    if (!resContentType || !resContentType.includes("application/json")) {
       const text = await res.text();
       console.error("Backend response bukan JSON:", text);
       return NextResponse.json(

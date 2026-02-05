@@ -2,15 +2,12 @@
 import DashboardLayout from "@/app/Admin/DashboardLayout";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useUpload } from "@/hooks/useSWR";
 
 export default function TambahSekolah() {
   const router = useRouter();
-  const { uploadFile, isUploading, error: uploadError } = useUpload();
   const [formData, setFormData] = useState({
     nama: "",
     npsn: "",
-    banner: "",
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -27,30 +24,35 @@ export default function TambahSekolah() {
     if (error) setError("");
   };
 
-  const handleFileChange = async (e) => {
+  const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Create preview first
+      if (file.size > 5 * 1024 * 1024) {
+        alert("Ukuran file terlalu besar! Maksimal 5MB");
+        return;
+      }
+
+      const validFormats = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+      ];
+      if (!validFormats.includes(file.type)) {
+        alert(
+          "Format file tidak valid! Gunakan .JPG, .JPEG, .PNG, .GIF, atau .WebP",
+        );
+        return;
+      }
+
+      setSelectedFile(file);
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreview(reader.result);
       };
       reader.readAsDataURL(file);
-      setSelectedFile(file);
-
-      // Upload file via hook
-      const result = await uploadFile(file, "school");
-
-      if (result.success) {
-        setFormData((prev) => ({
-          ...prev,
-          banner: result.path,
-        }));
-      } else {
-        setError(result.error);
-        setPreview(null);
-        setSelectedFile(null);
-      }
     }
   };
 
@@ -84,17 +86,23 @@ export default function TambahSekolah() {
         return;
       }
 
-      // Sesuaikan dengan endpoint API Anda
+      // Use FormData for file upload
+      const submitData = new FormData();
+      submitData.append("nama", formData.nama);
+      submitData.append("npsn", formData.npsn);
+      if (selectedFile) {
+        submitData.append("foto", selectedFile);
+      }
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL_API}/api/schools`,
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(formData),
-        }
+          body: submitData,
+        },
       );
 
       const data = await response.json();
@@ -175,7 +183,7 @@ export default function TambahSekolah() {
       </div>
 
       {/* Error Message */}
-      {(error || uploadError) && (
+      {error && (
         <div className="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
           <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
             <path
@@ -184,7 +192,7 @@ export default function TambahSekolah() {
               clipRule="evenodd"
             />
           </svg>
-          {error || uploadError}
+          {error}
         </div>
       )}
 
@@ -196,79 +204,44 @@ export default function TambahSekolah() {
             Upload Gambar
           </label>
           <div className="flex items-center gap-4">
-            <label className={`${isUploading ? 'cursor-wait' : 'cursor-pointer'}`}>
+            <label className="cursor-pointer">
               <input
                 type="file"
                 accept=".jpg,.jpeg,.png,.gif,.webp"
                 onChange={handleFileChange}
                 className="hidden"
-                disabled={isUploading}
               />
-              <div className={`${isUploading ? 'bg-gray-400 cursor-wait' : 'bg-blue-600 hover:bg-blue-700'} text-white px-6 py-2.5 rounded-lg text-sm font-medium transition flex items-center gap-2`}>
-                {isUploading ? (
-                  <>
-                    <svg
-                      className="animate-spin h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Mengupload...
-                  </>
-                ) : (
-                  <>
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                      />
-                    </svg>
-                    Upload Gambar
-                  </>
-                )}
+              <div className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition flex items-center gap-2">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                  />
+                </svg>
+                Upload Gambar
               </div>
             </label>
             <span className="text-sm text-gray-400">
-              {isUploading ? 'Sedang mengupload...' : (selectedFile ? selectedFile.name : "Belum Ada File dipilih")}
+              {selectedFile ? selectedFile.name : "Belum Ada File dipilih"}
             </span>
           </div>
           <p className="text-xs text-gray-400 mt-2">
             Format: .JPG, .JPEG, .PNG, .GIF, .WebP (Max 5MB)
           </p>
           {preview && (
-            <div className="mt-3 relative">
+            <div className="mt-3">
               <img
                 src={preview}
                 alt="Preview"
                 className="h-32 w-32 object-cover rounded-lg border-2 border-gray-200"
               />
-              {formData.banner && (
-                <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full p-1">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -436,7 +409,7 @@ export default function TambahSekolah() {
           </button>
           <button
             type="submit"
-            disabled={isLoading || isUploading}
+            disabled={isLoading}
             className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-3 rounded-lg text-sm font-semibold transition-all disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {isLoading ? (

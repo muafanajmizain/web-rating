@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import DashboardLayout from "../DashboardLayout";
-import { useSchoolDetailLocal, updateSchoolByManager, useUpload } from "@/hooks/useSWR";
+import { useSchoolDetailLocal, updateSchoolByManager } from "@/hooks/useSWR";
 
 export default function DataSekolah() {
   const [user, setUser] = useState(null);
@@ -31,6 +31,7 @@ export default function DataSekolah() {
 
   // Preview image state
   const [previewImage, setPreviewImage] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   // Get user and school_id from localStorage
   useEffect(() => {
@@ -56,9 +57,6 @@ export default function DataSekolah() {
     mutate,
   } = useSchoolDetailLocal(schoolId);
 
-  // Upload hook
-  const { uploadFile, isUploading, error: uploadError } = useUpload();
-
   // Populate form when school data is loaded
   useEffect(() => {
     if (school) {
@@ -81,9 +79,33 @@ export default function DataSekolah() {
   }, [school]);
 
   // Handler upload gambar
-  const handleImageUpload = async (e) => {
+  const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setNotification({
+        show: true,
+        type: "error",
+        message: "Ukuran file terlalu besar! Maksimal 5MB",
+      });
+      return;
+    }
+
+    // Validate file type
+    const validFormats = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
+    if (!validFormats.includes(file.type)) {
+      setNotification({
+        show: true,
+        type: "error",
+        message: "Format file tidak valid! Gunakan JPG, JPEG, PNG, GIF, atau WebP",
+      });
+      return;
+    }
+
+    // Store selected file
+    setSelectedFile(file);
 
     // Show preview immediately
     const reader = new FileReader();
@@ -91,27 +113,6 @@ export default function DataSekolah() {
       setPreviewImage(reader.result);
     };
     reader.readAsDataURL(file);
-
-    // Upload to server
-    const result = await uploadFile(file, "school");
-
-    if (result.success) {
-      // Use the uploaded file URL
-      setFormData((prev) => ({ ...prev, foto: result.path }));
-      setNotification({
-        show: true,
-        type: "success",
-        message: "Foto berhasil diupload!",
-      });
-    } else {
-      // Reset preview on error
-      setPreviewImage(school?.foto || null);
-      setNotification({
-        show: true,
-        type: "error",
-        message: result.error || "Gagal mengupload foto",
-      });
-    }
   };
 
   // Handler input change
@@ -138,13 +139,17 @@ export default function DataSekolah() {
 
     setIsSaving(true);
     try {
-      await updateSchoolByManager(schoolId, formData);
+      // Pass selectedFile as third argument for FormData upload
+      await updateSchoolByManager(schoolId, formData, selectedFile);
 
       setNotification({
         show: true,
         type: "success",
         message: "Data sekolah berhasil disimpan!",
       });
+
+      // Clear selected file after successful save
+      setSelectedFile(null);
 
       // Refresh data
       mutate();
@@ -377,27 +382,15 @@ export default function DataSekolah() {
               <div className="flex items-center gap-4">
                 <label
                   htmlFor="upload-gambar"
-                  className={`px-6 py-2 rounded-lg cursor-pointer transition duration-200 flex items-center gap-2 ${
-                    isUploading
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-blue-600 hover:bg-blue-700"
-                  } text-white`}
+                  className="px-6 py-2 rounded-lg cursor-pointer transition duration-200 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
                 >
-                  {isUploading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Mengupload...
-                    </>
-                  ) : (
-                    "Upload Gambar"
-                  )}
+                  Upload Gambar
                 </label>
                 <input
                   id="upload-gambar"
                   type="file"
                   accept=".jpg,.jpeg,.png,.gif,.webp"
                   onChange={handleImageUpload}
-                  disabled={isUploading}
                   className="hidden"
                 />
                 {previewImage ? (
@@ -405,13 +398,13 @@ export default function DataSekolah() {
                     <img
                       src={previewImage}
                       alt="Preview"
-                      className={`w-20 h-20 object-cover rounded-lg border-2 border-gray-300 ${
-                        isUploading ? "opacity-50" : ""
-                      }`}
+                      className="w-20 h-20 object-cover rounded-lg border-2 border-gray-300"
                     />
-                    {isUploading && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-lg">
-                        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    {selectedFile && (
+                      <div className="absolute -top-2 -right-2 bg-yellow-500 text-white rounded-full p-1" title="File akan diupload saat menyimpan">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
                       </div>
                     )}
                   </div>
@@ -424,6 +417,11 @@ export default function DataSekolah() {
               <p className="text-xs text-gray-500 mt-2">
                 Format: JPG, JPEG, PNG, GIF, WebP (Max 5MB)
               </p>
+              {selectedFile && (
+                <p className="text-xs text-yellow-600 mt-1">
+                  File "{selectedFile.name}" akan diupload saat menyimpan
+                </p>
+              )}
             </div>
 
             {/* Row 1: Nama Sekolah & NPSN */}

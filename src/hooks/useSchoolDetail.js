@@ -35,17 +35,36 @@ export function useSchoolDetailLocal(id) {
 }
 
 // Function to update school data by manager (pengelola)
-export async function updateSchoolByManager(schoolId, data) {
+// Supports both JSON data and file upload via FormData
+export async function updateSchoolByManager(schoolId, data, file = null) {
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
+  let body;
+  const headers = {
+    Authorization: `Bearer ${token}`,
+  };
+
+  if (file) {
+    // Use FormData when there's a file to upload
+    const formData = new FormData();
+    Object.keys(data).forEach((key) => {
+      if (data[key] !== undefined && data[key] !== null) {
+        formData.append(key, data[key]);
+      }
+    });
+    formData.append("foto", file);
+    body = formData;
+  } else {
+    // Use JSON when no file
+    headers["Content-Type"] = "application/json";
+    body = JSON.stringify(data);
+  }
+
   const response = await fetch(`/api/schools/${schoolId}/update-manager`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(data),
+    headers,
+    body,
   });
 
   const result = await response.json();
