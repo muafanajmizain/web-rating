@@ -41,10 +41,11 @@ export async function GET(request, { params }) {
 
     const data = await res.json();
 
-    return NextResponse.json({
-      success: true,
-      data: data,
-    });
+    if (!data.success) {
+      return NextResponse.json(data, { status: res.status });
+    }
+
+    return NextResponse.json(data);
   } catch (error) {
     console.error("Error fetching request detail:", error);
     return NextResponse.json(

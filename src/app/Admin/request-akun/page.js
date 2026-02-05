@@ -51,12 +51,13 @@ export default function RequestAkunPage() {
     router.push(`/Admin/request-akun/detail/${id}?role=${role}`);
   };
 
-  // Filter data berdasarkan role yang dipilih
-  const filteredData = requests.filter((item) =>
-    role === "pengelola"
-      ? item.role !== "reviewer"
-      : item.role === "reviewer"
-  );
+  // Filter data berdasarkan role yang dipilih (case-insensitive)
+  const filteredData = requests.filter((item) => {
+    const itemRole = item.role?.toLowerCase();
+    return role === "pengelola"
+      ? itemRole === "pengelola"
+      : itemRole === "reviewer";
+  });
 
   return (
     <DashboardLayout title="Admin / Request Akun">

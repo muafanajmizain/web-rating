@@ -1,12 +1,35 @@
 // src/hooks/useAccountRequests.js
 import useSWR from "swr";
-import { authFetcher } from "@/lib/swr-config";
+
+// Local fetcher for Next.js API routes (with auth)
+const localAuthFetcher = async (url) => {
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+  const headers = {
+    "Content-Type": "application/json",
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, { headers });
+
+  if (!response.ok) {
+    const error = new Error("Gagal mengambil data");
+    error.status = response.status;
+    throw error;
+  }
+
+  return response.json();
+};
 
 // Hook for fetching all account requests
 export function useAccountRequests() {
   const { data, error, isLoading, mutate } = useSWR(
     "/api/requests",
-    authFetcher
+    localAuthFetcher
   );
 
   return {
@@ -21,7 +44,7 @@ export function useAccountRequests() {
 export function useAccountRequestDetail(id) {
   const { data, error, isLoading, mutate } = useSWR(
     id ? `/api/requests/${id}` : null,
-    authFetcher
+    localAuthFetcher
   );
 
   return {
