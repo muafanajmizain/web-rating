@@ -1,9 +1,10 @@
-// src/app/api/reviews/route.js
+// src/app/api/reviews/[id]/responses/route.js
 import { NextResponse } from "next/server";
 
-// POST - Create a new review (reviewer only)
-export async function POST(request) {
+// POST - Send a new response/message
+export async function POST(request, { params }) {
   try {
+    const { id: reviewId } = await params;
     const token = request.headers.get("Authorization");
 
     if (!token) {
@@ -16,7 +17,7 @@ export async function POST(request) {
     const body = await request.json();
 
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL_API}/api/reviews`,
+      `${process.env.NEXT_PUBLIC_BASE_URL_API}/api/reviews/${reviewId}/responses`,
       {
         method: "POST",
         headers: {
@@ -48,17 +49,18 @@ export async function POST(request) {
 
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
-    console.error("Error creating review:", error);
+    console.error("Error sending response:", error);
     return NextResponse.json(
-      { success: false, message: error.message || "Internal Server Error" },
+      { success: false, message: "Internal Server Error" },
       { status: 500 }
     );
   }
 }
 
-// GET - Get reviews based on user role (from token)
-export async function GET(request) {
+// GET - Get all responses for a review
+export async function GET(request, { params }) {
   try {
+    const { id: reviewId } = await params;
     const token = request.headers.get("Authorization");
 
     if (!token) {
@@ -69,7 +71,7 @@ export async function GET(request) {
     }
 
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL_API}/api/reviews`,
+      `${process.env.NEXT_PUBLIC_BASE_URL_API}/api/reviews/${reviewId}/responses`,
       {
         method: "GET",
         headers: {
@@ -100,7 +102,7 @@ export async function GET(request) {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Error fetching reviews:", error);
+    console.error("Error fetching responses:", error);
     return NextResponse.json(
       { success: false, message: "Internal Server Error" },
       { status: 500 }

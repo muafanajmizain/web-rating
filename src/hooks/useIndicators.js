@@ -69,6 +69,46 @@ export function useIndicators() {
   };
 }
 
+// Hook for fetching all indicators via public endpoints (for reviewers)
+// This fetches all categories first, then all indicators for each category
+export function useAllIndicatorsPublic() {
+  // First fetch all categories
+  const { data: categoriesData, error: categoriesError, isLoading: categoriesLoading } = useSWR(
+    `${BASE_URL}/api/indicators/categories`,
+    publicFetcher
+  );
+
+  const categories = categoriesData?.data || [];
+  const categoryIds = categories.map(cat => cat.id);
+
+  // Create a stable key for fetching all indicators
+  const indicatorsKey = categoryIds.length > 0
+    ? `indicators-all-${categoryIds.join(',')}`
+    : null;
+
+  // Fetch all indicators from all categories
+  const { data: indicatorsData, error: indicatorsError, isLoading: indicatorsLoading, mutate } = useSWR(
+    indicatorsKey,
+    async () => {
+      const results = await Promise.all(
+        categoryIds.map(id =>
+          publicFetcher(`${BASE_URL}/api/indicators/category/${id}`)
+        )
+      );
+      // Flatten all indicators from all categories
+      return results.flatMap(result => result?.data || []);
+    }
+  );
+
+  return {
+    indicators: indicatorsData || [],
+    categories,
+    isLoading: categoriesLoading || indicatorsLoading,
+    isError: categoriesError || indicatorsError,
+    mutate,
+  };
+}
+
 // Hook for fetching indicators by category (public)
 export function useIndicatorsByCategory(categoryId) {
   const { data, error, isLoading, mutate } = useSWR(

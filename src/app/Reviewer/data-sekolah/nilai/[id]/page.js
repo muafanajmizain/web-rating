@@ -1,85 +1,85 @@
-// src/app/Reviewer/data-sekolah/detail/[id]/page.js
+// src/app/Reviewer/data-sekolah/nilai/[id]/page.js
 
-'use client';
+"use client";
 
-import { use, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // ✅ Untuk redirect
+import { use, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useSchoolDetailLocal } from "@/hooks/useSWR";
+import { useAllIndicatorsPublic } from "@/hooks/useIndicators";
+import { createReview } from "@/hooks/useTanggapan";
 
 export default function SchoolRatingPage({ params }) {
-  const { id } = use(params);
-  const router = useRouter(); // ✅ Inisialisasi router
+  const { id: schoolId } = use(params);
+  const router = useRouter();
 
-  const [schoolData, setSchoolData] = useState({
-    name: "SMA Negeri 1 Purwokerto",
-    managerName: "Guz Namz Zan Al-Musta",
-    reviewDate: "2025-11-08",
-    website: "https://website-sekolah-project.vercel.app/visi_misi.html"
-  });
+  // Fetch school data
+  const {
+    school,
+    isLoading: schoolLoading,
+    isError: schoolError,
+  } = useSchoolDetailLocal(schoolId);
 
-  const [ratings, setRatings] = useState([
-    {
-      no: 1,
-      domain: "Web Mudah Diakses",
-      description: "Web dapat diakses dengan lancar menggunakan nama domain tanpa perlu ditambahkan www/ download.",
-      rating: 1.5,
-      reason: "",
-      link: ""
-    },
-    {
-      no: 2,
-      domain: "Domain Valid",
-      description: "Domain terdaftar secara resmi dan tidak expired. Bisa dicek melalui WHOIS atau status domain.",
-      rating: 1.5,
-      reason: "",
-      link: ""
-    },
-    {
-      no: 3,
-      domain: "Konten Visi & Misi",
-      description: "Website menampilkan visi, misi, dan tujuan sekolah secara lengkap dan jelas.",
-      rating: 1.5,
-      reason: "",
-      link: ""
-    },
-    {
-      no: 4,
-      domain: "Konten Profil Sekolah",
-      description: "Harus mencakup sejarah, struktur organisasi, dan data sekolah lainnya.",
-      rating: 1.5,
-      reason: "",
-      link: ""
-    },
-    {
-      no: 5,
-      domain: "Kontak dan Informasi",
-      description: "Harus menyediakan informasi kontak yang jelas dan responsif.",
-      rating: 1.5,
-      reason: "",
-      link: ""
+  // Fetch indicators via public endpoints (accessible to reviewers)
+  const {
+    indicators,
+    isLoading: indicatorsLoading,
+    isError: indicatorsError,
+  } = useAllIndicatorsPublic();
+
+  // Get user from localStorage
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error("Error parsing user:", e);
+      }
     }
-  ]);
+  }, []);
 
-  const [conclusion, setConclusion] = useState('');
+  // Form state
+  const [ratings, setRatings] = useState([]);
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  // Initialize ratings when indicators are loaded
+  useEffect(() => {
+    if (indicators && indicators.length > 0) {
+      setRatings(
+        indicators.map((indicator) => ({
+          indicator_id: indicator.id,
+          judul: indicator.judul,
+          deskripsi: indicator.deskripsi,
+          skor: 3,
+          alasan: "",
+          link_bukti: "",
+        }))
+      );
+    }
+  }, [indicators]);
 
   const handleInputChange = (index, field, value) => {
     const newRatings = [...ratings];
-    if (field === 'rating') {
-      let numValue = parseFloat(value);
-      if (isNaN(numValue)) return;
+    if (field === "skor") {
+      let numValue = parseInt(value, 10);
+      if (isNaN(numValue)) numValue = 0;
       numValue = Math.max(0, Math.min(5, numValue));
-      numValue = Math.round(numValue * 2) / 2;
-      newRatings[index].rating = numValue;
+      newRatings[index].skor = numValue;
     } else {
       newRatings[index][field] = value;
     }
     setRatings(newRatings);
 
+    // Clear error for this field
     const errorKey = `${field}-${index}`;
     if (errors[errorKey]) {
-      setErrors(prev => {
+      setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[errorKey];
         return newErrors;
@@ -87,100 +87,195 @@ export default function SchoolRatingPage({ params }) {
     }
   };
 
-  const handleDateChange = (e) => {
-    setSchoolData(prev => ({
-      ...prev,
-      reviewDate: e.target.value
-    }));
-  };
-
-  const handleConclusionChange = (value) => {
-    setConclusion(value);
-    if (errors.conclusion) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors.conclusion;
-        return newErrors;
-      });
-    }
-  };
-
-  const validateAndSubmit = () => {
+  const validateForm = () => {
     const newErrors = {};
 
     ratings.forEach((item, index) => {
-      if (item.reason.trim() === '') {
-        newErrors[`reason-${index}`] = 'Alasan wajib diisi';
-      }
-      if (item.rating < 3 && item.link.trim() === '') {
-        newErrors[`link-${index}`] = 'Link bukti wajib diisi karena skor < 3';
+      // Link bukti required if skor < 3
+      if (item.skor < 3 && (!item.link_bukti || item.link_bukti.trim() === "")) {
+        newErrors[`link_bukti-${index}`] =
+          "Link bukti wajib diisi karena skor < 3";
       }
     });
 
-    if (conclusion.trim() === '') {
-      newErrors.conclusion = 'Kesimpulan penilaian harus diisi';
-    }
-
     setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-    if (Object.keys(newErrors).length === 0) {
+  const handleSubmitClick = () => {
+    setSubmitError("");
+    if (validateForm()) {
       setShowConfirmModal(true);
     }
   };
 
-  const handleConfirmSubmit = () => {
-    console.log('Data submitted:', { ratings, conclusion, schoolId: id });
-    // ✅ Langsung redirect ke daftar sekolah — tanpa popup sukses
-    router.push('/Reviewer/data-sekolah');
+  const handleConfirmSubmit = async () => {
+    setShowConfirmModal(false);
+    setIsSubmitting(true);
+    setSubmitError("");
+
+    try {
+      // Prepare items for submission
+      const items = ratings.map((rating) => ({
+        indicator_id: rating.indicator_id,
+        skor: rating.skor,
+        alasan: rating.alasan || null,
+        link_bukti: rating.link_bukti || null,
+      }));
+
+      await createReview({
+        reviewer_id: user?.id,
+        school_id: schoolId,
+        items,
+      });
+
+      setShowSuccessModal(true);
+
+      // Auto redirect after 2 seconds
+      setTimeout(() => {
+        router.push("/Reviewer/data-sekolah");
+      }, 2000);
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      setSubmitError(error.message || "Gagal mengirim penilaian");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const closeModal = () => {
-    setShowConfirmModal(false);
-  };
+  // Loading state
+  if (schoolLoading || indicatorsLoading) {
+    return (
+      <div className="p-8 flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-gray-600">Memuat data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (schoolError || indicatorsError) {
+    return (
+      <div className="p-8 flex-1">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <p className="text-red-600 font-medium">Gagal memuat data</p>
+          <button
+            onClick={() => router.back()}
+            className="mt-4 text-blue-600 hover:text-blue-700"
+          >
+            Kembali
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // School not found
+  if (!school) {
+    return (
+      <div className="p-8 flex-1">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+          <p className="text-yellow-700 font-medium">Sekolah tidak ditemukan</p>
+          <button
+            onClick={() => router.back()}
+            className="mt-4 text-blue-600 hover:text-blue-700"
+          >
+            Kembali
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // No indicators
+  if (!indicators || indicators.length === 0) {
+    return (
+      <div className="p-8 flex-1">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+          <p className="text-yellow-700 font-medium">
+            Belum ada indikator penilaian
+          </p>
+          <button
+            onClick={() => router.back()}
+            className="mt-4 text-blue-600 hover:text-blue-700"
+          >
+            Kembali
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 flex-1 overflow-auto relative">
-      <h2 className="text-3xl font-bold mb-6">Penilaian</h2>
+      <h2 className="text-3xl font-bold mb-6">Penilaian Website Sekolah</h2>
 
       {/* School Info Card */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="text-sm font-semibold text-gray-700 block">Nama Pengelola</label>
-            <p className="mt-2 text-gray-900 font-medium">{schoolData.managerName}</p>
+            <label className="text-sm font-semibold text-gray-700 block">
+              Nama Sekolah
+            </label>
+            <p className="mt-2 text-gray-900 font-medium text-lg">
+              {school.nama}
+            </p>
           </div>
           <div>
-            <label className="text-sm font-semibold text-gray-700 block">Nama Sekolah</label>
-            <p className="mt-2 text-gray-900 font-medium">{schoolData.name}</p>
+            <label className="text-sm font-semibold text-gray-700 block">
+              NPSN
+            </label>
+            <p className="mt-2 text-gray-900 font-medium">{school.npsn || "-"}</p>
           </div>
           <div>
-            <label className="text-sm font-semibold text-gray-700 block">Tanggal Penilaian</label>
-            <input
-              type="date"
-              value={schoolData.reviewDate}
-              onChange={handleDateChange}
-              className="mt-2 w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <label className="text-sm font-semibold text-gray-700 block">
+              Jenjang
+            </label>
+            <p className="mt-2 text-gray-900 font-medium">
+              {school.jenjang || "-"}
+            </p>
           </div>
           <div>
-            <label className="text-sm font-semibold text-gray-700 block">Website Sekolah yang Dinilai</label>
-            <a
-              href={schoolData.website}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 block text-sky-600 hover:text-sky-700 hover:underline text-sm font-medium break-all"
-            >
-              {schoolData.website}
-            </a>
+            <label className="text-sm font-semibold text-gray-700 block">
+              Website Sekolah
+            </label>
+            {school.website ? (
+              <a
+                href={
+                  school.website.startsWith("http")
+                    ? school.website
+                    : `https://${school.website}`
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 block text-blue-600 hover:text-blue-700 hover:underline text-sm font-medium break-all"
+              >
+                {school.website}
+              </a>
+            ) : (
+              <p className="mt-2 text-gray-500">Tidak tersedia</p>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Error Message */}
+      {submitError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <p className="text-red-600 text-sm">{submitError}</p>
+        </div>
+      )}
 
       {/* Rating Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden mb-6">
         <div className="px-6 py-4 border-b bg-gradient-to-r from-blue-50 to-blue-100">
           <h3 className="text-xl font-bold text-gray-800">Tabel Penilaian</h3>
-          <p className="text-sm text-gray-600 mt-1">Note: Link Bukti wajib diisi ketika skor &lt; 3</p>
+          <p className="text-sm text-gray-600 mt-1">
+            Berikan skor 0-5 untuk setiap indikator. Link bukti wajib diisi jika
+            skor &lt; 3
+          </p>
         </div>
 
         <div className="overflow-x-auto">
@@ -188,57 +283,81 @@ export default function SchoolRatingPage({ params }) {
             <thead className="bg-blue-700 text-white">
               <tr>
                 <th className="px-6 py-4 text-center w-16">No</th>
-                <th className="px-6 py-4 text-left">Poin Penilaian</th>
-                <th className="px-6 py-4 text-center w-32">Skor</th>
-                <th className="px-6 py-4 text-center w-64">Alasan</th>
+                <th className="px-6 py-4 text-left">Indikator Penilaian</th>
+                <th className="px-6 py-4 text-center w-24">Skor</th>
+                <th className="px-6 py-4 text-center w-64">Alasan (Opsional)</th>
                 <th className="px-6 py-4 text-center w-64">Link Bukti</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {ratings.map((item, index) => (
-                <tr key={item.no} className="hover:bg-blue-50 transition">
+                <tr key={item.indicator_id} className="hover:bg-blue-50 transition">
                   <td className="px-6 py-4 text-center">
                     <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-semibold text-sm">
-                      {item.no}
+                      {index + 1}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <p className="text-sm text-gray-900 font-medium">{item.domain}</p>
-                    <p className="text-xs text-gray-600 mt-1">{item.description}</p>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <input
-                      type="number"
-                      step="0.5"
-                      min="0"
-                      max="5"
-                      value={item.rating}
-                      onChange={(e) => handleInputChange(index, 'rating', e.target.value)}
-                      className="w-20 border border-gray-300 rounded-lg px-3 py-2 text-center text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
-                    />
-                  </td>
-                  <td className="px-6 py-4">
-                    <textarea
-                      rows="2"
-                      value={item.reason}
-                      onChange={(e) => handleInputChange(index, 'reason', e.target.value)}
-                      placeholder="Masukkan alasan..."
-                      className={`w-full border ${errors[`reason-${index}`] ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none`}
-                    />
-                    {errors[`reason-${index}`] && (
-                      <p className="mt-1 text-xs text-red-600">{errors[`reason-${index}`]}</p>
+                    <p className="text-sm text-gray-900 font-medium">
+                      {item.judul}
+                    </p>
+                    {item.deskripsi && (
+                      <p className="text-xs text-gray-600 mt-1">
+                        {item.deskripsi}
+                      </p>
                     )}
                   </td>
+                  <td className="px-6 py-4 text-center">
+                    <select
+                      value={item.skor}
+                      onChange={(e) =>
+                        handleInputChange(index, "skor", e.target.value)
+                      }
+                      disabled={isSubmitting}
+                      className="w-20 border border-gray-300 rounded-lg px-3 py-2 text-center text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+                    >
+                      {[0, 1, 2, 3, 4, 5].map((score) => (
+                        <option key={score} value={score}>
+                          {score}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
                   <td className="px-6 py-4">
                     <textarea
                       rows="2"
-                      value={item.link}
-                      onChange={(e) => handleInputChange(index, 'link', e.target.value)}
-                      placeholder="Masukkan link bukti..."
-                      className={`w-full border ${errors[`link-${index}`] ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none`}
+                      value={item.alasan}
+                      onChange={(e) =>
+                        handleInputChange(index, "alasan", e.target.value)
+                      }
+                      placeholder="Masukkan alasan..."
+                      disabled={isSubmitting}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                     />
-                    {errors[`link-${index}`] && (
-                      <p className="mt-1 text-xs text-red-600">{errors[`link-${index}`]}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <textarea
+                      rows="2"
+                      value={item.link_bukti}
+                      onChange={(e) =>
+                        handleInputChange(index, "link_bukti", e.target.value)
+                      }
+                      placeholder={
+                        item.skor < 3
+                          ? "Wajib diisi karena skor < 3"
+                          : "Masukkan link bukti..."
+                      }
+                      disabled={isSubmitting}
+                      className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${
+                        errors[`link_bukti-${index}`]
+                          ? "border-red-500 bg-red-50"
+                          : "border-gray-300"
+                      }`}
+                    />
+                    {errors[`link_bukti-${index}`] && (
+                      <p className="mt-1 text-xs text-red-600">
+                        {errors[`link_bukti-${index}`]}
+                      </p>
                     )}
                   </td>
                 </tr>
@@ -248,54 +367,122 @@ export default function SchoolRatingPage({ params }) {
         </div>
       </div>
 
-      {/* Kesimpulan Section */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <h3 className="text-lg font-bold text-gray-800 mb-3">Kesimpulan Penilaian Review</h3>
-        <p className="text-sm text-gray-600 mb-3">Tuliskan kesan umum dan rekomendasi perbaikan</p>
-        <textarea
-          rows="6"
-          value={conclusion}
-          onChange={(e) => handleConclusionChange(e.target.value)}
-          placeholder="Masukkan kesimpulan penilaian..."
-          className={`w-full border ${errors.conclusion ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none`}
-        />
-        {errors.conclusion && (
-          <p className="mt-2 text-sm text-red-600">{errors.conclusion}</p>
-        )}
-      </div>
-
-      {/* Action Buttons — HANYA TOMBOL KIRIM */}
+      {/* Action Buttons */}
       <div className="flex justify-end gap-3">
         <button
-          onClick={validateAndSubmit}
-          className="bg-sky-500 hover:bg-sky-600 text-white px-8 py-3 rounded-lg font-semibold transition flex items-center gap-2"
+          onClick={() => router.back()}
+          disabled={isSubmitting}
+          className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold transition"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-          </svg>
-          Kirim
+          Batal
+        </button>
+        <button
+          onClick={handleSubmitClick}
+          disabled={isSubmitting}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isSubmitting ? (
+            <>
+              <svg
+                className="animate-spin h-5 w-5"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              Mengirim...
+            </>
+          ) : (
+            <>
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                />
+              </svg>
+              Kirim Penilaian
+            </>
+          )}
         </button>
       </div>
 
-      {/* ✅ POPUP KONFIRMASI — TANPA BACKGROUND GELAP */}
+      {/* Confirmation Modal */}
       {showConfirmModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl">
-            <h3 className="text-lg font-bold text-gray-800 mb-2">Konfirmasi Pengiriman</h3>
-            <p className="text-gray-600 mb-6">Apakah Anda yakin ingin mengirim penilaian ini?</p>
+            <h3 className="text-lg font-bold text-gray-800 mb-2">
+              Konfirmasi Pengiriman
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Apakah Anda yakin ingin mengirim penilaian ini? Penilaian yang
+              sudah dikirim tidak dapat diubah.
+            </p>
             <div className="flex justify-end gap-3">
               <button
-                onClick={closeModal}
+                onClick={() => setShowConfirmModal(false)}
                 className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
               >
-                Tidak
+                Batal
               </button>
               <button
                 onClick={handleConfirmSubmit}
-                className="px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
               >
-                Ya
+                Ya, Kirim
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                className="w-8 h-8 text-green-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-gray-800 mb-2">
+              Penilaian Berhasil Dikirim!
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Terima kasih telah melakukan penilaian. Anda akan dialihkan ke
+              halaman daftar sekolah.
+            </p>
+            <div className="animate-pulse text-sm text-gray-500">
+              Mengalihkan...
             </div>
           </div>
         </div>

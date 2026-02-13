@@ -124,10 +124,10 @@ export default function Page() {
                   </div>
                 </div>
 
-                {review.id && (
+                {review.school_id && (
                   <div className="flex items-center">
                     <Link
-                      href={`/Reviewer/tanggapan/detail/${review.id}`}
+                      href={`/Reviewer/tanggapan/detail/${review.school_id}`}
                       className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm font-medium whitespace-nowrap"
                     >
                       Lihat Detail
