@@ -38,3 +38,4 @@ export {
   useVillages,
   useLocationNames,
 } from './useLocations';
+export { useAppSettings, updateAppSettings } from './useAppSettings';
