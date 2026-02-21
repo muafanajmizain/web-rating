@@ -19,10 +19,18 @@ export function useSchools() {
   };
 }
 
-// Hook for fetching all schools (public endpoint via Next.js API route)
-export function usePublicSchools() {
+// Hook for fetching all schools (public endpoint)
+export function usePublicSchools(filters = {}) {
+  const params = new URLSearchParams();
+  if (filters.jenjang && filters.jenjang !== 'semua') params.append('jenjang', filters.jenjang);
+  if (filters.province_id) params.append('province_id', filters.province_id);
+  if (filters.regency_id) params.append('regency_id', filters.regency_id);
+
+  const query = params.toString();
+  const url = `/api/schools${query ? `?${query}` : ''}`;
+
   const { data, error, isLoading, mutate } = useSWR(
-    '/api/schools',
+    url,
     publicFetcher
   );
 

@@ -26,7 +26,11 @@ export default function AllRankingsPage() {
     isLoading: loading,
     isError: error,
     mutate,
-  } = usePublicSchools();
+  } = usePublicSchools({
+    jenjang,
+    province_id: locationFilter.province_id,
+    regency_id: locationFilter.regency_id,
+  });
 
   const { provinces } = useProvinces();
   const { regencies } = useRegencies(locationFilter.province_id);
@@ -49,27 +53,13 @@ export default function AllRankingsPage() {
   const isPengelola = user?.role === "pengelola";
   const userHasSchool = user?.school_id != null;
 
-  // Add rank to schools
-  const schools = useMemo(() => {
+  // Add rank to schools (ranks are based on filtered results from backend)
+  const filteredSchools = useMemo(() => {
     return rawSchools.map((school, index) => ({
       ...school,
       rank: index + 1,
     }));
   }, [rawSchools]);
-
-  const filteredSchools = useMemo(() => {
-    let filtered = schools;
-    if (jenjang !== "semua") {
-      filtered = filtered.filter((school) => school.jenjang === jenjang);
-    }
-    if (locationFilter.province_id) {
-      filtered = filtered.filter((school) => school.province_id === locationFilter.province_id);
-    }
-    if (locationFilter.regency_id) {
-      filtered = filtered.filter((school) => school.regency_id === locationFilter.regency_id);
-    }
-    return filtered;
-  }, [schools, jenjang, locationFilter]);
 
   // Open claim confirmation modal
   const openClaimModal = (school) => {
@@ -367,9 +357,9 @@ export default function AllRankingsPage() {
         <div className="container mx-auto p-6">
           <div className="text-center py-12">
             <p className="text-gray-600">
-              {jenjang === "semua"
+              {jenjang === "semua" && !locationFilter.province_id
                 ? "Belum ada data sekolah"
-                : `Tidak ada sekolah dengan jenjang ${jenjang}`}
+                : "Tidak ada sekolah yang sesuai dengan filter yang dipilih"}
             </p>
           </div>
         </div>
