@@ -67,7 +67,7 @@ export default function Page() {
   // Render UI
   if (loading) {
     return (
-      <div className="p-8 flex-1 flex items-center justify-center">
+      <div className="p-4 sm:p-6 lg:p-8 flex-1 flex items-center justify-center">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mr-3"></div>
         <span className="text-gray-600">Memuat daftar sekolah...</span>
       </div>
@@ -76,7 +76,7 @@ export default function Page() {
 
   if (error) {
     return (
-      <div className="p-8 flex-1">
+      <div className="p-4 sm:p-6 lg:p-8 flex-1">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-2xl">
           <h3 className="text-lg font-bold text-red-800 mb-2">Gagal Memuat Data</h3>
           <p className="text-red-700 mb-4">{error}</p>

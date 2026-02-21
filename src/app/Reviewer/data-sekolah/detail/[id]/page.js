@@ -37,7 +37,7 @@ export default function SchoolDetailPage({ params }) {
 
   if (isLoading) {
     return (
-      <div className="p-8 flex-1 flex items-center justify-center">
+      <div className="p-4 sm:p-6 lg:p-8 flex-1 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
           <p className="text-gray-600">Memuat data...</p>
@@ -48,7 +48,7 @@ export default function SchoolDetailPage({ params }) {
 
   if (schoolError) {
     return (
-      <div className="p-8 flex-1">
+      <div className="p-4 sm:p-6 lg:p-8 flex-1">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
           <p className="text-red-600 font-medium">Gagal memuat data sekolah</p>
           <Link
@@ -64,7 +64,7 @@ export default function SchoolDetailPage({ params }) {
 
   if (!school) {
     return (
-      <div className="p-8 flex-1">
+      <div className="p-4 sm:p-6 lg:p-8 flex-1">
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
           <p className="text-yellow-700 font-medium">Sekolah tidak ditemukan</p>
           <Link
@@ -79,9 +79,9 @@ export default function SchoolDetailPage({ params }) {
   }
 
   return (
-    <div className="p-8 flex-1 overflow-auto">
+    <div className="p-4 sm:p-6 lg:p-8 flex-1 overflow-auto">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-3xl font-bold">Detail Sekolah</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold">Detail Sekolah</h2>
         <Link
           href="/Reviewer/data-sekolah"
           className="text-blue-600 hover:text-blue-700 flex items-center gap-1"

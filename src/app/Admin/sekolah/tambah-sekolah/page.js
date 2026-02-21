@@ -149,7 +149,7 @@ export default function TambahSekolah() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-3xl font-bold text-gray-800">Tambah Sekolah</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">Tambah Sekolah</h2>
           <button
             onClick={handleBack}
             className="text-gray-600 hover:text-gray-800 flex items-center gap-2 text-sm font-medium transition"
@@ -247,7 +247,7 @@ export default function TambahSekolah() {
         </div>
 
         {/* Form Grid */}
-        <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
           {/* Nama Sekolah */}
           <div>
             <label className="block text-base font-semibold text-gray-800 mb-2">

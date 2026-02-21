@@ -1,18 +1,18 @@
-// Komponen layout utama yang mengatur struktur keseluruhan halaman admin
-// Yang mengatur Sidebar + Header + Content
-import Sidebar from '../components/AdminSidebar';
-import Header from '../components/AdminHeader';
+"use client";
+
+import { useState } from "react";
+import Sidebar from "../components/AdminSidebar";
+import Header from "../components/AdminHeader";
 
 export default function DashboardLayout({ children, title }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <>
-      <Sidebar />
-      <div className="ml-64">
-        <Header title={title} />
-        
-        {/* layouting admin utama */}
-        <main className="p-8 bg-gray-100 min-h-screen">
-          
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div className="lg:ml-64 min-h-screen">
+        <Header title={title} onMenuToggle={() => setSidebarOpen(true)} />
+        <main className="p-4 sm:p-6 lg:p-8 bg-gray-100 min-h-screen">
           {children}
         </main>
       </div>

@@ -135,7 +135,7 @@ export default function DetailSekolah() {
       <div className="max-w-6xl mx-auto">
         {/* Diperlebar dari max-w-4xl ke max-w-6xl */}
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Detail Sekolah</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Detail Sekolah</h1>
           <button
             onClick={handleBack}
             className="text-gray-600 hover:text-gray-800 flex items-center gap-2 text-sm font-medium transition"

@@ -70,9 +70,9 @@ export default function Page() {
 
 
   return (
-    <div className="p-8 flex-1 overflow-hidden flex flex-col">
+    <div className="p-4 sm:p-6 lg:p-8 flex-1 overflow-hidden flex flex-col">
       {/* Judul Halaman */}
-      <h2 className="text-3xl font-bold mb-2">Profil Anda</h2>
+      <h2 className="text-2xl sm:text-3xl font-bold mb-2">Profil Anda</h2>
       <p className="text-gray-600 mb-8">Kelola informasi akun Anda di sini.</p>
 
       {/* Kontainer Utama Profil - Lebar penuh, responsif */}

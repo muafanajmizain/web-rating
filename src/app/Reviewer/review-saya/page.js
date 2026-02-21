@@ -19,8 +19,8 @@ export default function Page() {
   }, []);
 
   return (
-    <div className="p-6 flex-1 overflow-hidden">
-      <h2 className="text-2xl font-bold mb-4">Daftar Review Saya</h2>
+    <div className="p-4 sm:p-6 flex-1 overflow-hidden">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4">Daftar Review Saya</h2>
       <div className="bg-white rounded-xl shadow-sm border overflow-hidden max-w-6xl mx-auto">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-gray-700">

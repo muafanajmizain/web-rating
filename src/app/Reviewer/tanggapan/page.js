@@ -18,8 +18,8 @@ export default function Page() {
   const { reviews, isLoading, isError, errorMessage } = useReviews();
 
   return (
-    <div className="p-8 flex-1 overflow-hidden flex flex-col">
-      <h2 className="text-3xl font-bold mb-6">Tanggapan</h2>
+    <div className="p-4 sm:p-6 lg:p-8 flex-1 overflow-hidden flex flex-col">
+      <h2 className="text-2xl sm:text-3xl font-bold mb-6">Tanggapan</h2>
       <p className="text-gray-600 mb-6">
         Daftar review yang telah Anda lakukan beserta tanggapan dari pengelola.
       </p>

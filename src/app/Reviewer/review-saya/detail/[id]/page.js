@@ -11,7 +11,7 @@ export default function SchoolDetailPage({ params }) {
 
   if (loading) {
     return (
-      <div className="p-8 flex-1 flex items-center justify-center">
+      <div className="p-4 sm:p-6 lg:p-8 flex-1 flex items-center justify-center">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mr-3"></div>
         <span className="text-gray-600">Memuat detail sekolah...</span>
       </div>
@@ -74,8 +74,8 @@ export default function SchoolDetailPage({ params }) {
   };
 
   return (
-    <div className="p-8 flex-1 overflow-auto">
-      <h2 className="text-3xl font-bold mb-6">Detail Sekolah</h2>
+    <div className="p-4 sm:p-6 lg:p-8 flex-1 overflow-auto">
+      <h2 className="text-2xl sm:text-3xl font-bold mb-6">Detail Sekolah</h2>
 
       {/* School Info Card */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">

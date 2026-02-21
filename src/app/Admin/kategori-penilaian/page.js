@@ -101,7 +101,7 @@ export default function KategoriPenilaianPage() {
       <div className="max-w-5xl mx-auto space-y-10">
 
         {/* TITLE */}
-        <h1 className="text-3xl font-bold text-center text-gray-800">
+        <h1 className="text-2xl sm:text-3xl font-bold text-center text-gray-800">
           Kategori Penilaian
         </h1>
 

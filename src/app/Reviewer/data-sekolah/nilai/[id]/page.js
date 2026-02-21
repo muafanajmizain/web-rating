@@ -146,7 +146,7 @@ export default function SchoolRatingPage({ params }) {
   // Loading state
   if (schoolLoading || indicatorsLoading) {
     return (
-      <div className="p-8 flex-1 flex items-center justify-center">
+      <div className="p-4 sm:p-6 lg:p-8 flex-1 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
           <p className="text-gray-600">Memuat data...</p>
@@ -158,7 +158,7 @@ export default function SchoolRatingPage({ params }) {
   // Error state
   if (schoolError || indicatorsError) {
     return (
-      <div className="p-8 flex-1">
+      <div className="p-4 sm:p-6 lg:p-8 flex-1">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
           <p className="text-red-600 font-medium">Gagal memuat data</p>
           <button
@@ -175,7 +175,7 @@ export default function SchoolRatingPage({ params }) {
   // School not found
   if (!school) {
     return (
-      <div className="p-8 flex-1">
+      <div className="p-4 sm:p-6 lg:p-8 flex-1">
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
           <p className="text-yellow-700 font-medium">Sekolah tidak ditemukan</p>
           <button
@@ -192,7 +192,7 @@ export default function SchoolRatingPage({ params }) {
   // No indicators
   if (!indicators || indicators.length === 0) {
     return (
-      <div className="p-8 flex-1">
+      <div className="p-4 sm:p-6 lg:p-8 flex-1">
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
           <p className="text-yellow-700 font-medium">
             Belum ada indikator penilaian
@@ -209,8 +209,8 @@ export default function SchoolRatingPage({ params }) {
   }
 
   return (
-    <div className="p-8 flex-1 overflow-auto relative">
-      <h2 className="text-3xl font-bold mb-6">Penilaian Website Sekolah</h2>
+    <div className="p-4 sm:p-6 lg:p-8 flex-1 overflow-auto relative">
+      <h2 className="text-2xl sm:text-3xl font-bold mb-6">Penilaian Website Sekolah</h2>
 
       {/* School Info Card */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">

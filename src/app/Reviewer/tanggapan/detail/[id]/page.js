@@ -120,7 +120,7 @@ export default function Page({ params }) {
   // Loading state
   if (isLoading) {
     return (
-      <div className="p-8 flex-1 flex items-center justify-center">
+      <div className="p-4 sm:p-6 lg:p-8 flex-1 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
           <p className="text-gray-600">Memuat data...</p>
@@ -132,7 +132,7 @@ export default function Page({ params }) {
   // Error state
   if (isError) {
     return (
-      <div className="p-8 flex-1">
+      <div className="p-4 sm:p-6 lg:p-8 flex-1">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
           <p className="text-red-600 font-medium">Gagal memuat data</p>
           <Link
@@ -149,7 +149,7 @@ export default function Page({ params }) {
   // Not found state
   if (!reviewsData || reviewsData.length === 0) {
     return (
-      <div className="p-8 flex-1">
+      <div className="p-4 sm:p-6 lg:p-8 flex-1">
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
           <p className="text-yellow-700 font-medium">Review tidak ditemukan</p>
           <Link
@@ -168,8 +168,8 @@ export default function Page({ params }) {
   const groupedMessages = groupMessagesByDate(responses);
 
   return (
-    <div className="p-8 flex-1 overflow-hidden flex flex-col">
-      <h2 className="text-3xl font-bold mb-2">Detail Tanggapan</h2>
+    <div className="p-4 sm:p-6 lg:p-8 flex-1 overflow-hidden flex flex-col">
+      <h2 className="text-2xl sm:text-3xl font-bold mb-2">Detail Tanggapan</h2>
       <p className="text-gray-600 mb-6">
         Percakapan dengan pengelola sekolah.
       </p>

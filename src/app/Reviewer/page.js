@@ -72,8 +72,8 @@ export default function ReviewerPage() {
   };
 
   return (
-    <div className="p-6 flex-1 overflow-hidden">
-      <h2 className="text-2xl font-bold mb-4">Dashboard Reviewer</h2>
+    <div className="p-4 sm:p-6 flex-1 overflow-hidden">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4">Dashboard Reviewer</h2>
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
