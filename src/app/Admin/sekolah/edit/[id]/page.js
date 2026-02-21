@@ -1,5 +1,6 @@
 "use client";
 import DashboardLayout from "@/app/Admin/DashboardLayout";
+import LocationSelector from "@/components/LocationSelector";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -33,6 +34,12 @@ export default function EditSekolah() {
   const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState("");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [locationData, setLocationData] = useState({
+    province_id: "",
+    regency_id: "",
+    district_id: "",
+    village_id: "",
+  });
 
   // Fetch data sekolah untuk di-edit
   useEffect(() => {
@@ -85,6 +92,14 @@ export default function EditSekolah() {
         setFormData({
           nama: data.data.nama || "",
           npsn: data.data.npsn || "",
+        });
+
+        // Set location data
+        setLocationData({
+          province_id: data.data.province_id || "",
+          regency_id: data.data.regency_id || "",
+          district_id: data.data.district_id || "",
+          village_id: data.data.village_id || "",
         });
 
         // Set preview gambar jika ada
@@ -191,6 +206,10 @@ export default function EditSekolah() {
         // formDataToSend.append('id', String(schoolId));
         formDataToSend.append("nama", formData.nama);
         formDataToSend.append("npsn", formData.npsn);
+        if (locationData.province_id) formDataToSend.append("province_id", locationData.province_id);
+        if (locationData.regency_id) formDataToSend.append("regency_id", locationData.regency_id);
+        if (locationData.district_id) formDataToSend.append("district_id", locationData.district_id);
+        if (locationData.village_id) formDataToSend.append("village_id", locationData.village_id);
         formDataToSend.append("foto", selectedFile);
 
         const apiUrl = `${process.env.NEXT_PUBLIC_BASE_URL_API}/api/schools/${schoolId}`;
@@ -211,10 +230,12 @@ export default function EditSekolah() {
         // Jika tidak ada file, gunakan JSON
         const apiUrl = `${process.env.NEXT_PUBLIC_BASE_URL_API}/api/schools/${schoolId}`;
         const bodyData = {
-          // ❌ JANGAN kirim ID di body - ID sudah ada di URL!
-          // id: String(schoolId),
           nama: formData.nama,
           npsn: formData.npsn,
+          ...(locationData.province_id && { province_id: locationData.province_id }),
+          ...(locationData.regency_id && { regency_id: locationData.regency_id }),
+          ...(locationData.district_id && { district_id: locationData.district_id }),
+          ...(locationData.village_id && { village_id: locationData.village_id }),
         };
 
         console.log("API URL (JSON):", apiUrl);
@@ -532,10 +553,21 @@ export default function EditSekolah() {
           </div>
         </div>
 
-        {/* Alamat Lengkap */}
+        {/* Lokasi Sekolah */}
         <div>
           <label className="block text-base font-semibold text-gray-800 mb-2">
-            Alamat Lengkap Sekolah
+            Lokasi Sekolah
+          </label>
+          <LocationSelector
+            value={locationData}
+            onChange={setLocationData}
+          />
+        </div>
+
+        {/* Detail Alamat */}
+        <div>
+          <label className="block text-base font-semibold text-gray-800 mb-2">
+            Detail Alamat Sekolah
           </label>
           <textarea
             disabled

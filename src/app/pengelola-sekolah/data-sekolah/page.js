@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import DashboardLayout from "../DashboardLayout";
+import LocationSelector from "@/components/LocationSelector";
+import LocationDisplay from "@/components/LocationDisplay";
 import { useSchoolDetailLocal, updateSchoolByManager } from "@/hooks/useSWR";
 
 export default function DataSekolah() {
@@ -27,6 +29,14 @@ export default function DataSekolah() {
     alamat: "",
     deskripsi: "",
     foto: "",
+  });
+
+  // Location state
+  const [locationData, setLocationData] = useState({
+    province_id: "",
+    regency_id: "",
+    district_id: "",
+    village_id: "",
   });
 
   // Preview image state
@@ -71,6 +81,12 @@ export default function DataSekolah() {
         alamat: school.alamat || "",
         deskripsi: school.deskripsi || "",
         foto: school.foto || "",
+      });
+      setLocationData({
+        province_id: school.province_id || "",
+        regency_id: school.regency_id || "",
+        district_id: school.district_id || "",
+        village_id: school.village_id || "",
       });
       if (school.foto) {
         setPreviewImage(school.foto);
@@ -139,8 +155,16 @@ export default function DataSekolah() {
 
     setIsSaving(true);
     try {
+      // Merge location data into form data
+      const submitData = {
+        ...formData,
+        ...(locationData.province_id && { province_id: locationData.province_id }),
+        ...(locationData.regency_id && { regency_id: locationData.regency_id }),
+        ...(locationData.district_id && { district_id: locationData.district_id }),
+        ...(locationData.village_id && { village_id: locationData.village_id }),
+      };
       // Pass selectedFile as third argument for FormData upload
-      await updateSchoolByManager(schoolId, formData, selectedFile);
+      await updateSchoolByManager(schoolId, submitData, selectedFile);
 
       setNotification({
         show: true,
@@ -539,10 +563,21 @@ export default function DataSekolah() {
               />
             </div>
 
-            {/* Alamat Lengkap */}
+            {/* Lokasi Sekolah */}
             <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Alamat Lengkap Sekolah
+                Lokasi Sekolah
+              </label>
+              <LocationSelector
+                value={locationData}
+                onChange={setLocationData}
+              />
+            </div>
+
+            {/* Detail Alamat */}
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Detail Alamat Sekolah
               </label>
               <input
                 type="text"
@@ -550,7 +585,7 @@ export default function DataSekolah() {
                 value={formData.alamat}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Masukkan alamat lengkap"
+                placeholder="Masukkan detail alamat (jalan, nomor, RT/RW)"
               />
             </div>
 
@@ -705,7 +740,16 @@ export default function DataSekolah() {
 
                 <div className="md:col-span-2">
                   <span className="text-sm font-semibold text-gray-500">
-                    Alamat
+                    Lokasi
+                  </span>
+                  <div className="mt-1">
+                    <LocationDisplay school={school} layout="inline" />
+                  </div>
+                </div>
+
+                <div className="md:col-span-2">
+                  <span className="text-sm font-semibold text-gray-500">
+                    Detail Alamat
                   </span>
                   <p className="text-gray-800">{school.alamat || "-"}</p>
                 </div>

@@ -3,6 +3,7 @@
 
 import { use } from "react";
 import Link from "next/link";
+import LocationDisplay from "@/components/LocationDisplay";
 import { useSchoolDetailLocal } from "@/hooks/useSWR";
 import { useReviewsBySchool } from "@/hooks/useTanggapan";
 
@@ -119,8 +120,14 @@ export default function SchoolDetailPage({ params }) {
               <label className="text-sm font-medium text-gray-500">Status</label>
               <p className="mt-1 text-gray-900 font-medium">{school.status || "-"}</p>
             </div>
+            <div className="md:col-span-2">
+              <label className="text-sm font-medium text-gray-500">Lokasi</label>
+              <div className="mt-1">
+                <LocationDisplay school={school} layout="inline" />
+              </div>
+            </div>
             <div>
-              <label className="text-sm font-medium text-gray-500">Alamat</label>
+              <label className="text-sm font-medium text-gray-500">Detail Alamat</label>
               <p className="mt-1 text-gray-900">{school.alamat || "-"}</p>
             </div>
             <div>

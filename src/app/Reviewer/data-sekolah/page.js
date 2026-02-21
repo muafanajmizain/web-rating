@@ -4,7 +4,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useReviewerSchools } from '@/hooks/useSWR';
+import { useReviewerSchools, useProvinces, useRegencies } from '@/hooks/useSWR';
 
 export default function Page() {
   const { schools: rawSchools, isLoading: loading, isError: error } = useReviewerSchools();
@@ -12,6 +12,9 @@ export default function Page() {
   const [jenjang, setJenjang] = useState('');
   const [status, setStatus] = useState('');
   const [search, setSearch] = useState('');
+  const [locationFilter, setLocationFilter] = useState({ province_id: '', regency_id: '' });
+  const { provinces } = useProvinces();
+  const { regencies } = useRegencies(locationFilter.province_id);
 
   // Format and filter schools data
   const schoolsData = useMemo(() => {
@@ -33,7 +36,9 @@ export default function Page() {
       jenjang: school.jenjang || 'SMA',
       image: school.image_url || `https://placehold.co/300x150/6B7FD7/ffffff?text=${encodeURIComponent(school.nama || 'Sekolah')}`,
       url: school.website || '#',
-      reviewer: `${school.reviewer_count || 0}/${school.total_reviewer || 5}`
+      reviewer: `${school.reviewer_count || 0}/${school.total_reviewer || 5}`,
+      province_id: school.province_id || '',
+      regency_id: school.regency_id || '',
     }));
   }, [rawSchools]);
 
@@ -61,8 +66,15 @@ export default function Page() {
       );
     }
 
+    if (locationFilter.province_id) {
+      data = data.filter(d => d.province_id === locationFilter.province_id);
+    }
+    if (locationFilter.regency_id) {
+      data = data.filter(d => d.regency_id === locationFilter.regency_id);
+    }
+
     return data;
-  }, [jenjang, status, search, schoolsData]);
+  }, [jenjang, status, search, schoolsData, locationFilter]);
 
   // Render UI
   if (loading) {
@@ -115,6 +127,29 @@ export default function Page() {
           <option value="belum">Belum (0/5)</option>
           <option value="sebagian">Sebagian (1–4)</option>
           <option value="selesai">Selesai (5/5)</option>
+        </select>
+
+        <select
+          value={locationFilter.province_id}
+          onChange={(e) => setLocationFilter({ province_id: e.target.value, regency_id: '' })}
+          className="border border-gray-300 px-3 py-1.5 rounded text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none"
+        >
+          <option value="">Semua Provinsi</option>
+          {provinces.map((p) => (
+            <option key={p.id} value={p.id}>{p.name}</option>
+          ))}
+        </select>
+
+        <select
+          value={locationFilter.regency_id}
+          onChange={(e) => setLocationFilter((prev) => ({ ...prev, regency_id: e.target.value }))}
+          disabled={!locationFilter.province_id}
+          className="border border-gray-300 px-3 py-1.5 rounded text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <option value="">{locationFilter.province_id ? 'Semua Kab/Kota' : 'Pilih provinsi dulu'}</option>
+          {regencies.map((r) => (
+            <option key={r.id} value={r.id}>{r.name}</option>
+          ))}
         </select>
 
         <input

@@ -1,12 +1,14 @@
 // src/app/user/all-rankings/page.js
 "use client";
 import ConfirmModal from "@/components/ConfirmModal";
-import { usePublicSchools } from "@/hooks/useSWR";
+import { usePublicSchools, useProvinces, useRegencies } from "@/hooks/useSWR";
+import LocationDisplay from "@/components/LocationDisplay";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 export default function AllRankingsPage() {
   const [jenjang, setJenjang] = useState("semua");
+  const [locationFilter, setLocationFilter] = useState({ province_id: '', regency_id: '' });
   const [user, setUser] = useState(null);
   const [claimingSchoolId, setClaimingSchoolId] = useState(null);
   const [claimModal, setClaimModal] = useState({
@@ -25,6 +27,9 @@ export default function AllRankingsPage() {
     isError: error,
     mutate,
   } = usePublicSchools();
+
+  const { provinces } = useProvinces();
+  const { regencies } = useRegencies(locationFilter.province_id);
 
   // Get user from localStorage
   useEffect(() => {
@@ -52,10 +57,19 @@ export default function AllRankingsPage() {
     }));
   }, [rawSchools]);
 
-  const filteredSchools =
-    jenjang === "semua"
-      ? schools
-      : schools.filter((school) => school.jenjang === jenjang);
+  const filteredSchools = useMemo(() => {
+    let filtered = schools;
+    if (jenjang !== "semua") {
+      filtered = filtered.filter((school) => school.jenjang === jenjang);
+    }
+    if (locationFilter.province_id) {
+      filtered = filtered.filter((school) => school.province_id === locationFilter.province_id);
+    }
+    if (locationFilter.regency_id) {
+      filtered = filtered.filter((school) => school.regency_id === locationFilter.regency_id);
+    }
+    return filtered;
+  }, [schools, jenjang, locationFilter]);
 
   // Open claim confirmation modal
   const openClaimModal = (school) => {
@@ -285,19 +299,48 @@ export default function AllRankingsPage() {
         </div>
       )}
 
-      {/* Filter Jenjang */}
-      <div className="px-6 py-4 bg-white border-b">
-        <label className="mr-4 font-medium">Jenjang:</label>
-        <select
-          value={jenjang}
-          onChange={(e) => setJenjang(e.target.value)}
-          className="border rounded-md px-3 py-2"
-        >
-          <option value="semua">Semua Jenjang</option>
-          <option value="SMA/SMK/MA">SMA/SMK/MA</option>
-          <option value="SMP/MTS">SMP/MTS</option>
-          <option value="SD/MI">SD/MI</option>
-        </select>
+      {/* Filter */}
+      <div className="px-6 py-4 bg-white border-b flex flex-wrap gap-3 items-center">
+        <div>
+          <label className="mr-2 font-medium text-sm">Jenjang:</label>
+          <select
+            value={jenjang}
+            onChange={(e) => setJenjang(e.target.value)}
+            className="border rounded-md px-3 py-2 text-sm"
+          >
+            <option value="semua">Semua Jenjang</option>
+            <option value="SMA/SMK/MA">SMA/SMK/MA</option>
+            <option value="SMP/MTS">SMP/MTS</option>
+            <option value="SD/MI">SD/MI</option>
+          </select>
+        </div>
+        <div>
+          <label className="mr-2 font-medium text-sm">Provinsi:</label>
+          <select
+            value={locationFilter.province_id}
+            onChange={(e) => setLocationFilter({ province_id: e.target.value, regency_id: '' })}
+            className="border rounded-md px-3 py-2 text-sm"
+          >
+            <option value="">Semua Provinsi</option>
+            {provinces.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="mr-2 font-medium text-sm">Kab/Kota:</label>
+          <select
+            value={locationFilter.regency_id}
+            onChange={(e) => setLocationFilter((prev) => ({ ...prev, regency_id: e.target.value }))}
+            disabled={!locationFilter.province_id}
+            className="border rounded-md px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <option value="">{locationFilter.province_id ? 'Semua Kab/Kota' : 'Pilih provinsi dulu'}</option>
+            {regencies.map((r) => (
+              <option key={r.id} value={r.id}>{r.name}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Loading State */}
@@ -408,6 +451,13 @@ export default function AllRankingsPage() {
                   <h3 className="font-semibold text-gray-800 mb-1">
                     Nama Sekolah : {school.nama}
                   </h3>
+
+                  {/* Location */}
+                  {(school.province_id || school.regency_id) && (
+                    <div className="mb-2">
+                      <LocationDisplay school={school} layout="inline" />
+                    </div>
+                  )}
 
                   {/* Website Link */}
                   <p className="text-sm text-gray-600 mb-3">

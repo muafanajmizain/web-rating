@@ -31,3 +31,10 @@ export {
 } from './useAccountRequests';
 export { useDashboardSummary } from './useDashboardSummary';
 export { useUpload, uploadFileAsync } from './useUpload';
+export {
+  useProvinces,
+  useRegencies,
+  useDistricts,
+  useVillages,
+  useLocationNames,
+} from './useLocations';

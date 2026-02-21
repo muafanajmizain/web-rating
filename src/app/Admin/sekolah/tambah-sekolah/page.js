@@ -1,5 +1,6 @@
 "use client";
 import DashboardLayout from "@/app/Admin/DashboardLayout";
+import LocationSelector from "@/components/LocationSelector";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -14,6 +15,12 @@ export default function TambahSekolah() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [locationData, setLocationData] = useState({
+    province_id: "",
+    regency_id: "",
+    district_id: "",
+    village_id: "",
+  });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -90,6 +97,10 @@ export default function TambahSekolah() {
       const submitData = new FormData();
       submitData.append("nama", formData.nama);
       submitData.append("npsn", formData.npsn);
+      if (locationData.province_id) submitData.append("province_id", locationData.province_id);
+      if (locationData.regency_id) submitData.append("regency_id", locationData.regency_id);
+      if (locationData.district_id) submitData.append("district_id", locationData.district_id);
+      if (locationData.village_id) submitData.append("village_id", locationData.village_id);
       if (selectedFile) {
         submitData.append("foto", selectedFile);
       }
@@ -372,10 +383,21 @@ export default function TambahSekolah() {
           </div>
         </div>
 
-        {/* Alamat Lengkap */}
+        {/* Lokasi Sekolah */}
         <div>
           <label className="block text-base font-semibold text-gray-800 mb-2">
-            Alamat Lengkap Sekolah
+            Lokasi Sekolah
+          </label>
+          <LocationSelector
+            value={locationData}
+            onChange={setLocationData}
+          />
+        </div>
+
+        {/* Detail Alamat */}
+        <div>
+          <label className="block text-base font-semibold text-gray-800 mb-2">
+            Detail Alamat Sekolah
           </label>
           <textarea
             disabled

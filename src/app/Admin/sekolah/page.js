@@ -2,24 +2,32 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/app/Admin/DashboardLayout';
-import { useSchools } from '@/hooks/useSWR';
+import { useSchools, useProvinces, useRegencies } from '@/hooks/useSWR';
 
 export default function DaftarSekolah() {
   const router = useRouter();
   const { schools, isLoading: loading, isError: error } = useSchools();
   const [statusFilter, setStatusFilter] = useState('');
+  const [locationFilter, setLocationFilter] = useState({ province_id: '', regency_id: '' });
+  const { provinces } = useProvinces();
+  const { regencies } = useRegencies(locationFilter.province_id);
 
   const filteredSchools = useMemo(() => {
     if (!schools) return [];
-    if (statusFilter === '') return schools;
+    let filtered = schools;
     if (statusFilter === 'Sudah Klaim') {
-      return schools.filter((school) => school.is_claimed === true);
+      filtered = filtered.filter((school) => school.is_claimed === true);
+    } else if (statusFilter === 'Belum Klaim') {
+      filtered = filtered.filter((school) => school.is_claimed === false);
     }
-    if (statusFilter === 'Belum Klaim') {
-      return schools.filter((school) => school.is_claimed === false);
+    if (locationFilter.province_id) {
+      filtered = filtered.filter((school) => school.province_id === locationFilter.province_id);
     }
-    return schools;
-  }, [schools, statusFilter]);
+    if (locationFilter.regency_id) {
+      filtered = filtered.filter((school) => school.regency_id === locationFilter.regency_id);
+    }
+    return filtered;
+  }, [schools, statusFilter, locationFilter]);
 
   const handleFilterChange = (e) => {
     setStatusFilter(e.target.value);
@@ -84,7 +92,7 @@ export default function DaftarSekolah() {
       </div>
 
       {/* Filter */}
-      <div className="mb-6">
+      <div className="mb-6 flex flex-wrap gap-3">
         <select
           value={statusFilter}
           onChange={handleFilterChange}
@@ -94,6 +102,30 @@ export default function DaftarSekolah() {
           <option value="">Semua Status</option>
           <option value="Sudah Klaim">Sudah Klaim</option>
           <option value="Belum Klaim">Belum Klaim</option>
+        </select>
+
+        <select
+          value={locationFilter.province_id}
+          onChange={(e) => setLocationFilter({ province_id: e.target.value, regency_id: '' })}
+          disabled={loading}
+          className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm hover:border-gray-400 transition-colors min-w-[200px] disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <option value="">Semua Provinsi</option>
+          {provinces.map((p) => (
+            <option key={p.id} value={p.id}>{p.name}</option>
+          ))}
+        </select>
+
+        <select
+          value={locationFilter.regency_id}
+          onChange={(e) => setLocationFilter((prev) => ({ ...prev, regency_id: e.target.value }))}
+          disabled={loading || !locationFilter.province_id}
+          className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm hover:border-gray-400 transition-colors min-w-[200px] disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <option value="">{locationFilter.province_id ? 'Semua Kabupaten/Kota' : 'Pilih provinsi dulu'}</option>
+          {regencies.map((r) => (
+            <option key={r.id} value={r.id}>{r.name}</option>
+          ))}
         </select>
       </div>
 

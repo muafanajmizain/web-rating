@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import LocationDisplay from "@/components/LocationDisplay";
 import { useSchoolDetailLocal } from "@/hooks/useSWR";
 
 export default function SchoolDetailPage() {
@@ -397,6 +398,33 @@ export default function SchoolDetailPage() {
               </h2>
 
               <div className="space-y-3">
+                {/* Location */}
+                {(school.province_id || school.regency_id || school.district_id || school.village_id) && (
+                  <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl">
+                    <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <svg
+                        className="w-5 h-5 text-orange-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+                        Lokasi
+                      </p>
+                      <LocationDisplay school={school} layout="inline" />
+                    </div>
+                  </div>
+                )}
+
                 {/* Address */}
                 <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl">
                   <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -422,7 +450,7 @@ export default function SchoolDetailPage() {
                   </div>
                   <div className="flex-1">
                     <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
-                      Alamat
+                      Detail Alamat
                     </p>
                     <p className="text-gray-900">
                       {school.alamat || "Alamat tidak tersedia"}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import DashboardLayout from "@/app/Admin/DashboardLayout";
+import LocationDisplay from "@/components/LocationDisplay";
 import { useParams, useRouter } from "next/navigation";
 import { useSchoolDetail } from "@/hooks/useSWR";
 
@@ -247,9 +248,11 @@ export default function DetailSekolah() {
                 </span>
               </div>
 
+              <LocationDisplay school={school} />
+
               <div className="flex">
                 <span className="w-56 text-sm font-medium text-gray-700">
-                  Alamat Lengkap
+                  Detail Alamat
                 </span>
                 <span className="text-sm text-gray-900">
                   : {school.alamat || "-"}
